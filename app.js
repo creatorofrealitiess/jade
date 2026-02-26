@@ -108,6 +108,7 @@ auth.onAuthStateChanged(async (user) => {
         initAlignmentTracker();
         initJournal();
         initMessenger();
+        initAnchors();
     } else {
         currentUser = null;
         document.getElementById('authScreen').style.display = 'flex';
@@ -549,6 +550,226 @@ async function sendMessage() {
 
 document.getElementById('messengerSend').addEventListener('click', sendMessage);
 document.getElementById('messengerInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+// ═══════ SENSORY ANCHORS (Firestore synced) ═══════
+
+let anchorsData = { playlists: [], palettes: [], scents: [] };
+let anchorsUnsub = null;
+let paletteBuilderColours = [];
+
+function initAnchors() {
+    const ref = db.collection('shared').doc('anchors');
+    ref.get().then(doc => { if (!doc.exists) ref.set({ playlists: [], palettes: [], scents: [] }); });
+
+    if (anchorsUnsub) anchorsUnsub();
+    anchorsUnsub = ref.onSnapshot(doc => {
+        if (doc.exists) {
+            anchorsData = {
+                playlists: doc.data().playlists || [],
+                palettes: doc.data().palettes || [],
+                scents: doc.data().scents || []
+            };
+            renderPlaylists();
+            renderPalettes();
+            renderScents();
+        }
+    });
+}
+
+function saveAnchors() { db.collection('shared').doc('anchors').set(anchorsData); }
+
+// ── Tabs ──
+function anchorsTab(tab) {
+    document.querySelectorAll('.anchors-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+    document.querySelectorAll('.anchors-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('anchorsPanel-' + tab).classList.add('active');
+}
+
+// ── Playlists ──
+function extractSpotifyId(url) {
+    // Handle various Spotify URL formats
+    const patterns = [
+        /spotify\.com\/playlist\/([a-zA-Z0-9]+)/,
+        /spotify\.com\/embed\/playlist\/([a-zA-Z0-9]+)/,
+        /spotify:playlist:([a-zA-Z0-9]+)/
+    ];
+    for (const p of patterns) {
+        const m = url.match(p);
+        if (m) return m[1];
+    }
+    return null;
+}
+
+function addPlaylist() {
+    const urlInput = document.getElementById('playlistUrlInput');
+    const nameInput = document.getElementById('playlistNameInput');
+    const url = urlInput.value.trim();
+    const name = nameInput.value.trim();
+
+    if (!url) return;
+    const playlistId = extractSpotifyId(url);
+    if (!playlistId) { alert('Please paste a valid Spotify playlist URL'); return; }
+
+    anchorsData.playlists.push({
+        id: playlistId,
+        name: name || 'Untitled Playlist',
+        addedBy: currentUserName,
+        addedAt: Date.now()
+    });
+    saveAnchors();
+    urlInput.value = '';
+    nameInput.value = '';
+}
+
+function removePlaylist(idx) {
+    anchorsData.playlists.splice(idx, 1);
+    saveAnchors();
+}
+
+function renderPlaylists() {
+    const container = document.getElementById('playlistsList');
+    if (anchorsData.playlists.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:var(--space-xl) 0"><div class="empty-state-icon">&#127925;</div><p>No playlists yet. Paste a Spotify URL to add your first anchor.</p></div>';
+        return;
+    }
+    container.innerHTML = anchorsData.playlists.map((pl, i) =>
+        '<div class="anchor-card playlist-card">' +
+            '<div class="anchor-card-header">' +
+                '<div><div class="anchor-card-title">' + escapeHtml(pl.name) + '</div>' +
+                '<div class="anchor-card-meta">added by ' + escapeHtml(pl.addedBy || 'unknown') + '</div></div>' +
+                '<button class="affirmation-delete-btn" onclick="removePlaylist(' + i + ')" title="Remove">&times;</button>' +
+            '</div>' +
+            '<div class="playlist-embed">' +
+                '<iframe src="https://open.spotify.com/embed/playlist/' + pl.id + '?utm_source=generator&theme=0" ' +
+                'width="100%" height="152" frameBorder="0" allowfullscreen="" ' +
+                'allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>' +
+            '</div>' +
+        '</div>'
+    ).join('');
+}
+
+// ── Colour Palettes ──
+function addPaletteColour() {
+    if (paletteBuilderColours.length >= 8) return;
+    const colour = document.getElementById('paletteColourPicker').value;
+    paletteBuilderColours.push(colour);
+    renderPaletteBuilder();
+}
+
+function removePaletteBuilderColour(idx) {
+    paletteBuilderColours.splice(idx, 1);
+    renderPaletteBuilder();
+}
+
+function renderPaletteBuilder() {
+    const container = document.getElementById('paletteBuilderColours');
+    container.innerHTML = paletteBuilderColours.map((c, i) =>
+        '<div class="palette-builder-swatch" style="background:' + c + '" onclick="removePaletteBuilderColour(' + i + ')" title="Tap to remove">' +
+            '<span class="palette-swatch-x">&times;</span>' +
+        '</div>'
+    ).join('');
+}
+
+function savePalette() {
+    const nameInput = document.getElementById('paletteNameInput');
+    const name = nameInput.value.trim();
+    if (paletteBuilderColours.length < 2) { alert('Add at least 2 colours'); return; }
+
+    anchorsData.palettes.push({
+        name: name || 'Untitled Palette',
+        colours: [...paletteBuilderColours],
+        addedBy: currentUserName,
+        addedAt: Date.now()
+    });
+    saveAnchors();
+    nameInput.value = '';
+    paletteBuilderColours = [];
+    renderPaletteBuilder();
+}
+
+function removePalette(idx) {
+    anchorsData.palettes.splice(idx, 1);
+    saveAnchors();
+}
+
+function renderPalettes() {
+    const container = document.getElementById('palettesList');
+    if (anchorsData.palettes.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:var(--space-xl) 0"><div class="empty-state-icon">&#127912;</div><p>No palettes yet. Pick colours that feel like Jade.</p></div>';
+        return;
+    }
+    container.innerHTML = anchorsData.palettes.map((pal, i) =>
+        '<div class="anchor-card palette-card">' +
+            '<div class="anchor-card-header">' +
+                '<div><div class="anchor-card-title">' + escapeHtml(pal.name) + '</div>' +
+                '<div class="anchor-card-meta">by ' + escapeHtml(pal.addedBy || 'unknown') + '</div></div>' +
+                '<button class="affirmation-delete-btn" onclick="removePalette(' + i + ')" title="Remove">&times;</button>' +
+            '</div>' +
+            '<div class="palette-swatches">' +
+                (pal.colours || []).map(c =>
+                    '<div class="palette-swatch" style="background:' + c + '" onclick="copyColour(\'' + c + '\')" title="' + c + '">' +
+                        '<span class="palette-swatch-hex">' + c + '</span>' +
+                    '</div>'
+                ).join('') +
+            '</div>' +
+        '</div>'
+    ).join('');
+}
+
+function copyColour(hex) {
+    navigator.clipboard.writeText(hex).then(() => {
+        // Brief visual feedback — we could do a toast but let's keep it simple
+    }).catch(() => {});
+}
+
+// ── Scent Notes ──
+function addScent() {
+    const titleInput = document.getElementById('scentTitleInput');
+    const bodyInput = document.getElementById('scentBodyInput');
+    const title = titleInput.value.trim();
+    const body = bodyInput.value.trim();
+    if (!title && !body) return;
+
+    anchorsData.scents.push({
+        title: title || 'Untitled',
+        body: body || '',
+        addedBy: currentUserName,
+        addedAt: Date.now()
+    });
+    saveAnchors();
+    titleInput.value = '';
+    bodyInput.value = '';
+}
+
+function removeScent(idx) {
+    anchorsData.scents.splice(idx, 1);
+    saveAnchors();
+}
+
+function renderScents() {
+    const container = document.getElementById('scentsList');
+    if (anchorsData.scents.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:var(--space-xl) 0"><div class="empty-state-icon">&#128367;&#65039;</div><p>No scent notes yet. Describe the scents that bring you home.</p></div>';
+        return;
+    }
+    container.innerHTML = anchorsData.scents.map((s, i) =>
+        '<div class="anchor-card scent-card">' +
+            '<div class="anchor-card-header">' +
+                '<div><div class="anchor-card-title">' + escapeHtml(s.title) + '</div>' +
+                '<div class="anchor-card-meta">by ' + escapeHtml(s.addedBy || 'unknown') + '</div></div>' +
+                '<button class="affirmation-delete-btn" onclick="removeScent(' + i + ')" title="Remove">&times;</button>' +
+            '</div>' +
+            (s.body ? '<p class="scent-body">' + escapeHtml(s.body) + '</p>' : '') +
+        '</div>'
+    ).join('');
+}
+
+// ── Utility ──
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
 
 // ═══════ SERVICE WORKER & PWA ═══════
 
