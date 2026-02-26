@@ -1,45 +1,43 @@
-const CACHE_NAME = 'jade-v1';
+const CACHE_NAME = 'jade-v2';
 const ASSETS = [
-    '/',
-    '/index.html',
-    '/manifest.json'
+    './',
+    './index.html',
+    './styles.css',
+    './app.js',
+    './manifest.json',
+    './jade-texture.png',
+    './icons/icon-192.png',
+    './icons/icon-512.png'
 ];
 
-// Install
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS);
-        })
+        caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
     );
     self.skipWaiting();
 });
 
-// Activate
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
     event.waitUntil(
-        caches.keys().then((keys) => {
-            return Promise.all(
-                keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
-            );
-        })
+        caches.keys().then(keys =>
+            Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+        )
     );
     self.clients.claim();
 });
 
-// Fetch - Network first, fallback to cache
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
+    if (event.request.method !== 'GET') return;
+    const url = event.request.url;
+    if (url.includes('firebaseio.com') || url.includes('googleapis.com') || url.includes('gstatic.com') || url.includes('google.com')) return;
+
     event.respondWith(
         fetch(event.request)
-            .then((response) => {
+            .then(response => {
                 const clone = response.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, clone);
-                });
+                caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
                 return response;
             })
-            .catch(() => {
-                return caches.match(event.request);
-            })
+            .catch(() => caches.match(event.request))
     );
 });
