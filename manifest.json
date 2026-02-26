@@ -1,29 +1,25 @@
 {
     "name": "Jade",
     "short_name": "Jade",
-    "description": "Your portal to Jade — a desired reality in the English countryside",
-    "start_url": "/",
+    "description": "You are here now",
+    "start_url": "./",
+    "scope": "./",
     "display": "standalone",
     "background_color": "#faf6f0",
     "theme_color": "#2d5a3d",
     "orientation": "portrait",
-    "scope": "/",
     "icons": [
         {
-            "src": "icons/icon-192.png",
+            "src": "./icons/icon-192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any maskable"
         },
         {
-            "src": "icons/icon-512.png",
-            "sizes": "512x512",
-            "type": "image/png"
-        },
-        {
-            "src": "icons/icon-512.png",
+            "src": "./icons/icon-512.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "maskable"
+            "purpose": "any maskable"
         }
     ]
 }
