@@ -7,9 +7,9 @@
     /* Midnight Base */
     --bg-deep: #0f1a14;
     --bg-main: #141f18;
-    --bg-card: #1a2b21;
-    --bg-elevated: #213528;
-    --bg-surface: #273d2e;
+    --bg-card: #1e3225;
+    --bg-elevated: #253d2d;
+    --bg-surface: #2c4735;
 
     /* Jade Crystal Palette (muted for dark) */
     --jade-deep: #c5e0d2;
@@ -28,9 +28,9 @@
     --text-faint: #3d5e4a;
 
     /* Warm Cottage Accents */
-    --cream: #141f18;
-    --cream-dark: #1a2b21;
-    --parchment: #1e3a28;
+    --cream: #182a1e;
+    --cream-dark: #1e3225;
+    --parchment: #234030;
     --honey: #c9a45a;
     --honey-light: #a8863f;
     --rose: #c9867e;
@@ -567,8 +567,9 @@ body::after {
 }
 
 .msg {
-    max-width: 80%; padding: var(--space-md);
+    max-width: 70%; padding: var(--space-sm) var(--space-md);
     border-radius: var(--radius-lg); font-size: 14px; line-height: 1.5;
+    word-wrap: break-word;
 }
 
 .msg.sent {
@@ -597,16 +598,17 @@ body::after {
 
 .messenger-input {
     flex: 1; border: var(--border-medium);
-    border-radius: var(--radius-xl); padding: 10px var(--space-md);
-    font-family: var(--font-body); font-size: 14px;
+    border-radius: var(--radius-xl); padding: 12px var(--space-md);
+    font-family: var(--font-body); font-size: 15px;
     outline: none; background: var(--bg-card); color: var(--text-primary);
+    min-height: 44px;
 }
 
 .messenger-input::placeholder { color: var(--text-faint); }
 .messenger-input:focus { border-color: var(--jade-primary); }
 
 .messenger-send {
-    width: 40px; height: 40px; border-radius: 50%;
+    width: 44px; height: 44px; border-radius: 50%;
     background: linear-gradient(135deg, var(--jade-primary), var(--jade-pale));
     border: none; color: white; font-size: 16px;
     cursor: pointer; display: flex;
