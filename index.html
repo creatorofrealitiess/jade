@@ -179,7 +179,50 @@ You are already there."></textarea>
             <!-- ANCHORS -->
             <div class="page" id="page-anchors">
                 <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Sensory Anchors</h2></div>
-                <div class="placeholder-content"><div class="placeholder-icon">&#128367;&#65039;</div><h3>Pull Yourself Into the State</h3><p>Playlists, colour palettes, scents, sounds &mdash; the sensory threads that connect you to Jade instantly.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+                <p class="anchors-intro">The sensory threads that pull you into Jade instantly. A playlist, a colour, a scent &mdash; and you&rsquo;re there.</p>
+
+                <!-- TABS -->
+                <div class="anchors-tabs">
+                    <button class="anchors-tab active" data-tab="playlists" onclick="anchorsTab('playlists')">&#127925; Playlists</button>
+                    <button class="anchors-tab" data-tab="palettes" onclick="anchorsTab('palettes')">&#127912; Palettes</button>
+                    <button class="anchors-tab" data-tab="scents" onclick="anchorsTab('scents')">&#128367;&#65039; Scents</button>
+                </div>
+
+                <!-- PLAYLISTS TAB -->
+                <div class="anchors-panel active" id="anchorsPanel-playlists">
+                    <div class="anchors-add-area">
+                        <input class="auth-input" id="playlistUrlInput" placeholder="Paste a Spotify playlist URL..." style="width:100%">
+                        <input class="auth-input" id="playlistNameInput" placeholder="Name this vibe... (optional)" style="width:100%;margin-top:var(--space-sm)">
+                        <button class="btn-primary btn-sm" onclick="addPlaylist()" style="margin-top:var(--space-sm)">Add Playlist</button>
+                    </div>
+                    <div id="playlistsList" class="anchors-list"></div>
+                </div>
+
+                <!-- PALETTES TAB -->
+                <div class="anchors-panel" id="anchorsPanel-palettes">
+                    <div class="anchors-add-area">
+                        <input class="auth-input" id="paletteNameInput" placeholder="Name this palette... (e.g. Morning Mist)" style="width:100%">
+                        <div class="palette-builder" id="paletteBuilder">
+                            <div class="palette-builder-colours" id="paletteBuilderColours"></div>
+                            <div class="palette-builder-controls">
+                                <input type="color" id="paletteColourPicker" value="#5a9e7a" class="palette-colour-input">
+                                <button class="btn-secondary btn-sm" onclick="addPaletteColour()">+ Colour</button>
+                            </div>
+                        </div>
+                        <button class="btn-primary btn-sm" onclick="savePalette()" style="margin-top:var(--space-sm)">Save Palette</button>
+                    </div>
+                    <div id="palettesList" class="anchors-list"></div>
+                </div>
+
+                <!-- SCENTS TAB -->
+                <div class="anchors-panel" id="anchorsPanel-scents">
+                    <div class="anchors-add-area">
+                        <input class="auth-input" id="scentTitleInput" placeholder="Name this scent... (e.g. After the Rain)" style="width:100%">
+                        <textarea class="auth-input" id="scentBodyInput" placeholder="Describe it... petrichor on warm stone, wild thyme from the garden path..." rows="3" style="width:100%;margin-top:var(--space-sm);resize:none"></textarea>
+                        <button class="btn-primary btn-sm" onclick="addScent()" style="margin-top:var(--space-sm)">Add Scent</button>
+                    </div>
+                    <div id="scentsList" class="anchors-list"></div>
+                </div>
             </div>
 
             <!-- SETTINGS -->
