@@ -87,7 +87,7 @@ body::before {
     position: fixed;
     inset: 0;
     background: url('jade-texture.png') center/cover no-repeat;
-    opacity: 0.04;
+    opacity: 0.15;
     pointer-events: none;
     z-index: 0;
     filter: brightness(0.5);
@@ -120,7 +120,7 @@ body::after {
     position: absolute;
     inset: 0;
     background: url('jade-texture.png') center/cover no-repeat;
-    opacity: 0.05;
+    opacity: 0.15;
     filter: brightness(0.5);
 }
 
@@ -313,8 +313,8 @@ body::after {
     position: absolute;
     top: var(--space-sm);
     right: var(--space-sm);
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
     border: 1px solid rgba(168, 208, 184, 0.15);
     background: rgba(168, 208, 184, 0.08);
