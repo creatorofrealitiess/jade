@@ -385,6 +385,87 @@ body::after {
     font-weight: 300;
 }
 
+/* Alignment History */
+.alignment-history {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: var(--border-subtle);
+}
+
+.alignment-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+
+.alignment-history-title {
+    font-family: var(--font-handwritten);
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.alignment-history-toggle {
+    background: none; border: none;
+    font-family: var(--font-body);
+    font-size: 12px; color: var(--jade-primary);
+    cursor: pointer; text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.alignment-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 100px;
+    padding: var(--space-sm) 0;
+}
+
+.alignment-chart-day {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+}
+
+.alignment-chart-bar-wrap {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.alignment-chart-bar {
+    width: 100%;
+    max-width: 28px;
+    border-radius: 4px 4px 2px 2px;
+    background: linear-gradient(to top, var(--jade-pale), var(--jade-primary));
+    transition: height 0.4s ease;
+    min-height: 2px;
+}
+
+.alignment-chart-bar.empty {
+    background: var(--bg-surface);
+    height: 2px !important;
+}
+
+.alignment-chart-bar.today {
+    box-shadow: 0 0 8px rgba(90, 158, 122, 0.3);
+}
+
+.alignment-chart-label {
+    font-size: 10px;
+    color: var(--text-faint);
+    font-weight: 500;
+}
+
+.alignment-chart-label.today {
+    color: var(--jade-primary);
+}
+
 /* ═══════ FEATURE GRID ═══════ */
 .feature-grid {
     display: grid;
@@ -566,8 +647,47 @@ body::after {
     display: flex; flex-direction: column; gap: var(--space-sm);
 }
 
+.msg-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    max-width: 80%;
+}
+
+.msg-row.sent {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+
+.msg-row.received {
+    align-self: flex-start;
+}
+
+.msg-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: var(--bg-surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.msg-avatar img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+}
+
+.msg-avatar-initial {
+    font-family: var(--font-display);
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
 .msg {
-    max-width: 70%; padding: var(--space-sm) var(--space-md);
+    max-width: 100%; padding: var(--space-sm) var(--space-md);
     border-radius: var(--radius-lg); font-size: 14px; line-height: 1.5;
     word-wrap: break-word;
 }
@@ -779,6 +899,57 @@ body::after {
     font-family: var(--font-display);
     font-size: 18px; font-weight: 500; color: var(--text-primary);
     margin-bottom: var(--space-md);
+}
+
+.settings-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-md);
+    border-bottom: var(--border-subtle);
+}
+
+.settings-avatar {
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 2px solid var(--jade-pale);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.settings-avatar img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+}
+
+.settings-avatar span {
+    font-family: var(--font-display);
+    font-size: 24px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.settings-avatar-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.settings-avatar-btn {
+    cursor: pointer;
+    text-align: center;
+    display: inline-block;
+}
+
+.settings-avatar-hint {
+    font-size: 12px;
+    color: var(--text-faint);
+    font-family: var(--font-handwritten);
 }
 
 .settings-row {
