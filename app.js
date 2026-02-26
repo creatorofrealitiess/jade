@@ -108,6 +108,21 @@ function saveGeminiKey() {
     if (key) { localStorage.setItem('jade_gemini_key', key); alert('Gemini API key saved!'); }
 }
 
+async function updateDisplayName() {
+    const newName = document.getElementById('settingsNameInput').value.trim();
+    if (!newName) return;
+    try {
+        await currentUser.updateProfile({ displayName: newName });
+        await db.collection('users').doc(currentUser.uid).update({ displayName: newName });
+        currentUserName = newName;
+        document.getElementById('settingsName').textContent = newName;
+        document.getElementById('settingsNameInput').value = '';
+        alert('Name updated to ' + newName + '!');
+    } catch (err) {
+        alert('Error updating name: ' + err.message);
+    }
+}
+
 // ═══════ NAVIGATION ═══════
 
 const subtitles = {
@@ -346,30 +361,52 @@ async function journalDelete() {
 // ═══════ MESSENGER (Firestore real-time) ═══════
 
 let messengerUnsub = null;
+let userNameCache = {};
+
+async function loadUserNames() {
+    const snapshot = await db.collection('users').get();
+    snapshot.docs.forEach(doc => {
+        userNameCache[doc.id] = doc.data().displayName || 'Unknown';
+    });
+}
 
 function initMessenger() {
     if (messengerUnsub) messengerUnsub();
-    messengerUnsub = db.collection('messages').orderBy('sentAt', 'asc').limitToLast(100).onSnapshot(snapshot => {
-        const container = document.getElementById('messengerMessages');
-        container.innerHTML = '';
+    
+    loadUserNames().then(() => {
+        messengerUnsub = db.collection('messages').orderBy('sentAt', 'asc').limitToLast(100).onSnapshot(snapshot => {
+            const container = document.getElementById('messengerMessages');
+            container.innerHTML = '';
 
-        if (snapshot.empty) {
-            container.innerHTML = '<div class="empty-state" style="padding-top:60px"><div class="empty-state-icon">\uD83D\uDCAC</div><p>Start talking as your Jade selves. This is your space together.</p></div>';
-            return;
-        }
+            if (snapshot.empty) {
+                container.innerHTML = '<div class="empty-state" style="padding-top:60px"><div class="empty-state-icon">\uD83D\uDCAC</div><p>Start talking as your Jade selves. This is your space together.</p></div>';
+                return;
+            }
 
-        snapshot.docs.forEach(doc => {
-            const msg = doc.data();
-            const isMine = msg.senderId === currentUser.uid;
-            const time = msg.sentAt ? new Date(msg.sentAt.seconds * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
-            const div = document.createElement('div');
-            div.className = 'msg ' + (isMine ? 'sent' : 'received');
-            div.innerHTML = (!isMine ? '<span class="msg-sender">' + (msg.senderName || 'Unknown') + '</span>' : '') +
-                msg.text + '<span class="msg-time">' + time + '</span>';
-            container.appendChild(div);
+            snapshot.docs.forEach(doc => {
+                const msg = doc.data();
+                const isMine = msg.senderId === currentUser.uid;
+                const time = msg.sentAt ? new Date(msg.sentAt.seconds * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
+                const div = document.createElement('div');
+                div.className = 'msg ' + (isMine ? 'sent' : 'received');
+                
+                let html = '';
+                if (!isMine) {
+                    // Use live name from users collection, fall back to stored senderName
+                    const senderName = userNameCache[msg.senderId] || msg.senderName || 'Unknown';
+                    html += '<span class="msg-sender">' + senderName.replace(/</g, '&lt;') + '</span>';
+                }
+                const safeText = document.createElement('span');
+                safeText.textContent = msg.text;
+                html += safeText.innerHTML;
+                html += '<span class="msg-time">' + time + '</span>';
+                
+                div.innerHTML = html;
+                container.appendChild(div);
+            });
+
+            container.scrollTop = container.scrollHeight;
         });
-
-        container.scrollTop = container.scrollHeight;
     });
 }
 
