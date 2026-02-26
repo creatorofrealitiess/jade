@@ -44,7 +44,7 @@
 }
 
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-html { height: 100%; overflow: hidden; }
+html { height: 100%; overflow: hidden; background: #faf6f0; }
 
 body {
     font-family: var(--font-body);
