@@ -115,8 +115,66 @@
 
             <!-- PERSONAS -->
             <div class="page" id="page-personas">
-                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Personas</h2></div>
-                <div class="placeholder-content"><div class="placeholder-icon">&#129695;</div><h3>Who We Are There</h3><p>Define your Jade selves &mdash; your names, your looks, your daily lives, everything that makes you, you.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+                <div class="section-header">
+                    <button class="back-btn" onclick="personasBack()">&larr;</button>
+                    <h2 id="personasTitle">Personas</h2>
+                    <button class="section-action-btn" id="personasNewBtn" onclick="personaNew()">+</button>
+                </div>
+
+                <!-- LIST VIEW -->
+                <div id="personasList" class="personas-list"></div>
+
+                <!-- DETAIL VIEW -->
+                <div id="personaDetail" class="persona-detail" style="display:none">
+                    <div class="persona-detail-hero">
+                        <div class="persona-detail-avatar" id="personaDetailAvatar">
+                            <img id="personaDetailAvatarImg" src="" style="display:none">
+                            <span id="personaDetailAvatarInitial"></span>
+                        </div>
+                        <h2 class="persona-detail-name" id="personaDetailName"></h2>
+                        <p class="persona-detail-age" id="personaDetailAge"></p>
+                        <div class="persona-detail-actions">
+                            <button class="btn-secondary btn-sm" onclick="personaEdit()">Edit</button>
+                            <button class="btn-danger btn-sm" onclick="personaDelete()">Delete</button>
+                        </div>
+                    </div>
+                    <div id="personaDetailFields" class="persona-detail-fields"></div>
+                </div>
+
+                <!-- EDITOR -->
+                <div id="personaEditor" class="persona-editor" style="display:none">
+                    <div class="persona-editor-avatar-row">
+                        <div class="persona-editor-avatar" id="personaEditorAvatar">
+                            <img id="personaEditorAvatarImg" src="" style="display:none">
+                            <span id="personaEditorAvatarInitial">?</span>
+                        </div>
+                        <div>
+                            <label class="btn-secondary btn-sm" for="personaPhotoUpload">Upload Photo</label>
+                            <input type="file" id="personaPhotoUpload" accept="image/*" style="display:none">
+                            <div class="anchor-card-meta" style="margin-top:4px">Your Jade self</div>
+                        </div>
+                    </div>
+                    <input class="auth-input persona-field-input" id="personaEdName" placeholder="Name in Jade">
+                    <input class="auth-input persona-field-input" id="personaEdAge" placeholder="Age (e.g. 26)">
+                    <textarea class="auth-input persona-field-input" id="personaEdAppearance" placeholder="Appearance &mdash; what do you look like there?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="personaEdPersonality" placeholder="Personality &mdash; who are you in Jade?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="personaEdDailyLife" placeholder="Daily life &mdash; what does a typical day look like?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="personaEdStyle" placeholder="Style &mdash; how do you dress, your aesthetic?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="personaEdBackstory" placeholder="Backstory &mdash; how did you come to be in Jade?" rows="3"></textarea>
+
+                    <div class="persona-extras-section">
+                        <div class="persona-extras-header">
+                            <span class="anchor-card-title" style="font-size:16px">Extras</span>
+                            <button class="btn-secondary btn-sm" onclick="personaAddExtra()">+ Field</button>
+                        </div>
+                        <div id="personaExtras" class="persona-extras-list"></div>
+                    </div>
+
+                    <div class="journal-editor-actions">
+                        <button class="btn-secondary" onclick="personaCancelEdit()">Cancel</button>
+                        <button class="btn-primary btn-sm" onclick="personaSave()">Save Persona</button>
+                    </div>
+                </div>
             </div>
 
             <!-- CONNECTIONS -->
