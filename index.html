@@ -181,7 +181,14 @@ You are already there."></textarea>
                 <div class="settings-section">
                     <h3>Account</h3>
                     <div class="settings-row"><span class="settings-label">Signed in as</span><span class="settings-value" id="settingsEmail">&mdash;</span></div>
-                    <div class="settings-row"><span class="settings-label">Display name</span><span class="settings-value" id="settingsName">&mdash;</span></div>
+                    <div class="settings-row">
+                        <span class="settings-label">Display name</span>
+                        <span class="settings-value" id="settingsName">&mdash;</span>
+                    </div>
+                    <div style="margin-top:var(--space-sm)">
+                        <input class="auth-input" type="text" id="settingsNameInput" placeholder="Your name in Jade" style="width:100%;margin-bottom:var(--space-sm)">
+                        <button class="btn-secondary" onclick="updateDisplayName()">Update Name</button>
+                    </div>
                     <div style="margin-top:var(--space-md)"><button class="btn-danger" onclick="signOut()">Sign Out</button></div>
                 </div>
                 <div class="settings-section">
