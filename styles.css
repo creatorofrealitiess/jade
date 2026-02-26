@@ -61,7 +61,7 @@ body::before {
     position: fixed;
     inset: 0;
     background: url('jade-texture.png') center/cover no-repeat;
-    opacity: 0.08;
+    opacity: 0.25;
     pointer-events: none;
     z-index: 0;
 }
@@ -93,7 +93,7 @@ body::after {
     position: absolute;
     inset: 0;
     background: url('jade-texture.png') center/cover no-repeat;
-    opacity: 0.1;
+    opacity: 0.25;
 }
 
 .auth-container {
@@ -108,7 +108,7 @@ body::after {
 .auth-logo {
     font-family: var(--font-display);
     font-size: 48px;
-    font-weight: 300;
+    font-weight: 500;
     letter-spacing: 10px;
     color: var(--jade-dark);
     text-transform: uppercase;
@@ -179,7 +179,7 @@ body::after {
 .app-title {
     font-family: var(--font-display);
     font-size: 28px;
-    font-weight: 300;
+    font-weight: 500;
     letter-spacing: 6px;
     color: var(--jade-dark);
     text-transform: uppercase;
