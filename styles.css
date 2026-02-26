@@ -496,7 +496,7 @@ body::after {
     border-bottom: 1px solid var(--jade-mist);
 }
 
-.journal-editor-title::placeholder { color: var(--jade-pale); }
+.journal-editor-title::placeholder { color: var(--jade-medium); }
 
 .journal-editor-body {
     width: 100%; border: none; outline: none;
@@ -506,7 +506,7 @@ body::after {
     resize: none; min-height: 300px;
 }
 
-.journal-editor-body::placeholder { color: var(--jade-pale); }
+.journal-editor-body::placeholder { color: var(--jade-medium); }
 
 .journal-editor-actions {
     display: flex; gap: var(--space-sm);
