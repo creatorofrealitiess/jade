@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#2d5a3d">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Jade</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Quicksand:wght@300;400;500;600&family=Caveat:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- AUTH SCREEN -->
+    <div id="authScreen">
+        <div class="auth-container">
+            <h1 class="auth-logo">Jade</h1>
+            <p class="auth-tagline">you are here now</p>
+            <div class="auth-form" id="authForm">
+                <input class="auth-input" type="email" id="authEmail" placeholder="Email" autocomplete="email">
+                <input class="auth-input" type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
+                <input class="auth-input" type="text" id="authDisplayName" placeholder="Your name in Jade" style="display:none">
+                <button class="auth-btn" id="authSubmit">Enter Jade</button>
+                <div class="auth-error" id="authError"></div>
+                <div class="auth-toggle">
+                    <span id="authToggleText">First time?</span> <a id="authToggleLink">Create account</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app" style="display:none">
+        <header class="app-header">
+            <h1 class="app-title">Jade</h1>
+            <p class="app-subtitle" id="appSubtitle">you are here now</p>
+        </header>
+
+        <main class="content-area" id="contentArea">
+            <!-- HOME -->
+            <div class="page active" id="page-home">
+                <div class="affirmation-banner" id="affirmationBanner">
+                    <button class="affirmation-edit-btn" id="affirmationEditBtn" title="Edit affirmations">&#9998;</button>
+                    <p id="affirmationText">&ldquo;I don&rsquo;t hope for Jade. I don&rsquo;t wish for it. I live it &mdash; it is simply where I am.&rdquo;</p>
+                    <div class="source">&mdash; tap to cycle</div>
+                </div>
+
+                <div class="modal-overlay" id="affirmationModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Your Affirmations</h3>
+                            <button class="modal-close" id="affirmationModalClose">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="modal-description">These are the words that anchor you. Tap to cycle through them on the home screen.</p>
+                            <div id="affirmationList"></div>
+                            <div class="affirmation-add">
+                                <textarea class="affirmation-input" id="newAffirmation" placeholder="Write a new affirmation..." rows="2"></textarea>
+                                <button class="btn-primary btn-sm" id="addAffirmationBtn">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alignment-widget">
+                    <div class="alignment-widget-header">
+                        <h3>Today&rsquo;s Alignment</h3>
+                        <span>How natural does Jade feel?</span>
+                    </div>
+                    <div class="alignment-scale" id="alignmentScale">
+                        <button class="alignment-dot" data-level="1"></button>
+                        <button class="alignment-dot" data-level="2"></button>
+                        <button class="alignment-dot" data-level="3"></button>
+                        <button class="alignment-dot" data-level="4"></button>
+                        <button class="alignment-dot" data-level="5"></button>
+                        <button class="alignment-dot" data-level="6"></button>
+                        <button class="alignment-dot" data-level="7"></button>
+                    </div>
+                    <div class="alignment-labels"><span>drifting</span><span>home</span></div>
+                </div>
+
+                <div class="feature-grid">
+                    <a class="feature-card" data-page="world"><span class="feature-card-icon">&#127807;</span><div class="feature-card-title">The World</div><div class="feature-card-desc">Build &amp; explore Jade&rsquo;s landscape and lore</div></a>
+                    <a class="feature-card" data-page="personas" data-accent="rose"><span class="feature-card-icon">&#129695;</span><div class="feature-card-title">Personas</div><div class="feature-card-desc">Who we are in Jade</div></a>
+                    <a class="feature-card" data-page="connections" data-accent="lavender"><span class="feature-card-icon">&#128154;</span><div class="feature-card-title">Connections</div><div class="feature-card-desc">Love interests &amp; friends</div></a>
+                    <a class="feature-card" data-page="space" data-accent="honey"><span class="feature-card-icon">&#127969;</span><div class="feature-card-title">Our Space</div><div class="feature-card-desc">Us, pets, home &amp; the world</div></a>
+                    <a class="feature-card" data-page="journal"><span class="feature-card-icon">&#128214;</span><div class="feature-card-title">Journal</div><div class="feature-card-desc">Channel entries from within Jade</div></a>
+                    <a class="feature-card" data-page="messenger" data-accent="sky"><span class="feature-card-icon">&#128172;</span><div class="feature-card-title">Messenger</div><div class="feature-card-desc">Talk as your Jade selves</div></a>
+                    <a class="feature-card" data-page="gallery" data-accent="honey"><span class="feature-card-icon">&#127912;</span><div class="feature-card-title">Scene Builder</div><div class="feature-card-desc">Create memories &amp; vignettes</div></a>
+                    <a class="feature-card" data-page="timeline" data-accent="lavender"><span class="feature-card-icon">&#10024;</span><div class="feature-card-title">Timeline</div><div class="feature-card-desc">The story of your life in Jade</div></a>
+                    <a class="feature-card full-width" data-page="anchors" data-accent="rose"><span class="feature-card-icon float-gentle">&#128367;&#65039;</span><div class="feature-card-title">Sensory Anchors</div><div class="feature-card-desc">Playlists, palettes, scents &mdash; everything that pulls you into the state</div></a>
+                </div>
+                <div class="botanical-accent">&#10086; &#10086; &#10086;</div>
+            </div>
+
+            <!-- WORLD -->
+            <div class="page" id="page-world">
+                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>The World of Jade</h2></div>
+                <div class="placeholder-content"><div class="placeholder-icon">&#127807;</div><h3>Your English Countryside</h3><p>This is where you&rsquo;ll build the world &mdash; the rolling hills, the village, the magic woven into everyday life.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+            </div>
+
+            <!-- PERSONAS -->
+            <div class="page" id="page-personas">
+                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Personas</h2></div>
+                <div class="placeholder-content"><div class="placeholder-icon">&#129695;</div><h3>Who We Are There</h3><p>Define your Jade selves &mdash; your names, your looks, your daily lives, everything that makes you, you.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+            </div>
+
+            <!-- CONNECTIONS -->
+            <div class="page" id="page-connections">
+                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Connections</h2></div>
+                <div class="placeholder-content"><div class="placeholder-icon">&#128154;</div><h3>Your People</h3><p>Love interests, friends, neighbours &mdash; the souls who share Jade with you.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+            </div>
+
+            <!-- OUR SPACE -->
+            <div class="page" id="page-space">
+                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Our Space</h2></div>
+                <div class="placeholder-content"><div class="placeholder-icon">&#127969;</div><h3>Us, Pets, Home &amp; the World</h3><p>Photos of yourselves, your pets, your cottage, and the world around you &mdash; with Nano Banana Pro generation built right in.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+            </div>
+
+            <!-- JOURNAL -->
+            <div class="page" id="page-journal">
+                <div class="section-header">
+                    <button class="back-btn" id="journalBackBtn" onclick="journalBack()">&larr;</button>
+                    <h2 id="journalTitle">Journal</h2>
+                    <button class="section-action-btn" id="journalNewBtn" onclick="journalNew()">+</button>
+                </div>
+                <div id="journalList" class="journal-entries"></div>
+                <div id="journalEditor" class="journal-editor">
+                    <input class="journal-editor-title" id="journalEditorTitle" placeholder="Title this moment...">
+                    <textarea class="journal-editor-body" id="journalEditorBody" placeholder="Write from within Jade. Not 'I want to...' but 'Today I...'
+
+You are already there."></textarea>
+                    <div class="journal-editor-actions">
+                        <button class="btn-secondary" onclick="journalCancel()">Cancel</button>
+                        <button class="btn-primary btn-sm" id="journalDeleteBtn" onclick="journalDelete()" style="display:none;background:var(--rose);">Delete</button>
+                        <button class="btn-primary btn-sm" onclick="journalSave()">Save Entry</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MESSENGER -->
+            <div class="page" id="page-messenger">
+                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Messenger</h2></div>
+                <div class="messenger-container">
+                    <div class="messenger-messages" id="messengerMessages"></div>
+                    <div class="messenger-input-area">
+                        <input class="messenger-input" id="messengerInput" placeholder="Message as your Jade self..." autocomplete="off">
+                        <button class="messenger-send" id="messengerSend">&rarr;</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GALLERY -->
+            <div class="page" id="page-gallery">
+                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Scene Builder</h2></div>
+                <div class="placeholder-content"><div class="placeholder-icon">&#127912;</div><h3>Create Memories</h3><p>Combine images and words to build moments from Jade &mdash; a scrapbook of your life there.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+            </div>
+
+            <!-- TIMELINE -->
+            <div class="page" id="page-timeline">
+                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Timeline</h2></div>
+                <div class="placeholder-content"><div class="placeholder-icon">&#10024;</div><h3>The Story So Far</h3><p>A living chronology of your life in Jade &mdash; every moment building on the last.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+            </div>
+
+            <!-- ANCHORS -->
+            <div class="page" id="page-anchors">
+                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Sensory Anchors</h2></div>
+                <div class="placeholder-content"><div class="placeholder-icon">&#128367;&#65039;</div><h3>Pull Yourself Into the State</h3><p>Playlists, colour palettes, scents, sounds &mdash; the sensory threads that connect you to Jade instantly.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+            </div>
+
+            <!-- SETTINGS -->
+            <div class="page" id="page-settings">
+                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Settings</h2></div>
+                <div class="settings-section">
+                    <h3>Account</h3>
+                    <div class="settings-row"><span class="settings-label">Signed in as</span><span class="settings-value" id="settingsEmail">&mdash;</span></div>
+                    <div class="settings-row"><span class="settings-label">Display name</span><span class="settings-value" id="settingsName">&mdash;</span></div>
+                    <div style="margin-top:var(--space-md)"><button class="btn-danger" onclick="signOut()">Sign Out</button></div>
+                </div>
+                <div class="settings-section">
+                    <h3>Gemini API Key</h3>
+                    <p style="font-size:13px;color:var(--jade-medium);margin-bottom:var(--space-md);line-height:1.5">For Nano Banana Pro image generation. Stored only in your browser.</p>
+                    <input class="auth-input" type="password" id="geminiApiKey" placeholder="Paste your Gemini API key" style="width:100%;margin-bottom:var(--space-sm)">
+                    <button class="btn-secondary" onclick="saveGeminiKey()">Save Key</button>
+                </div>
+            </div>
+        </main>
+
+        <nav class="bottom-nav">
+            <button class="nav-item active" data-nav="home"><span class="nav-icon">&#127969;</span><span class="nav-label">Home</span></button>
+            <button class="nav-item" data-nav="journal"><span class="nav-icon">&#128214;</span><span class="nav-label">Journal</span></button>
+            <button class="nav-item" data-nav="messenger"><span class="nav-icon">&#128172;</span><span class="nav-label">Messages</span></button>
+            <button class="nav-item" data-nav="gallery"><span class="nav-icon">&#127912;</span><span class="nav-label">Scenes</span></button>
+            <button class="nav-item" data-nav="settings"><span class="nav-icon">&#10022;</span><span class="nav-label">Settings</span></button>
+        </nav>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
