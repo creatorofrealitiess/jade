@@ -960,6 +960,203 @@ body::after {
 .settings-label { font-size: 14px; color: var(--text-primary); }
 .settings-value { font-size: 13px; color: var(--text-muted); }
 
+/* ═══════ SENSORY ANCHORS ═══════ */
+.anchors-intro {
+    font-family: var(--font-handwritten);
+    font-size: 15px;
+    color: var(--text-muted);
+    margin-bottom: var(--space-lg);
+    line-height: 1.5;
+}
+
+.anchors-tabs {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-lg);
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 4px;
+    border: var(--border-subtle);
+}
+
+.anchors-tab {
+    flex: 1;
+    padding: var(--space-sm) var(--space-md);
+    border: none;
+    background: none;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.anchors-tab.active {
+    background: var(--bg-elevated);
+    color: var(--jade-primary);
+}
+
+.anchors-tab:hover:not(.active) { color: var(--text-secondary); }
+
+.anchors-panel { display: none; }
+.anchors-panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+.anchors-add-area {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: var(--border-subtle);
+    margin-bottom: var(--space-lg);
+}
+
+.anchors-list { display: flex; flex-direction: column; gap: var(--space-md); padding-bottom: var(--space-xl); }
+
+.anchor-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: var(--border-subtle);
+    transition: all 0.2s;
+}
+
+.anchor-card:hover { border-color: rgba(90, 158, 122, 0.2); }
+
+.anchor-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.anchor-card-title {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.anchor-card-meta {
+    font-family: var(--font-handwritten);
+    font-size: 13px;
+    color: var(--text-faint);
+    margin-top: 2px;
+}
+
+/* Playlist embed */
+.playlist-embed {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.playlist-embed iframe {
+    border-radius: var(--radius-md);
+    display: block;
+}
+
+/* Palette swatches */
+.palette-swatches {
+    display: flex;
+    gap: 0;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    height: 72px;
+}
+
+.palette-swatch {
+    flex: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.palette-swatch:hover { transform: scaleY(1.08); transform-origin: bottom; }
+
+.palette-swatch-hex {
+    font-family: var(--font-body);
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.palette-swatch:hover .palette-swatch-hex { opacity: 1; }
+
+/* Palette builder */
+.palette-builder {
+    margin-top: var(--space-sm);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+}
+
+.palette-builder-colours {
+    display: flex;
+    gap: 4px;
+    min-height: 40px;
+    flex-wrap: wrap;
+}
+
+.palette-builder-swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.palette-builder-swatch:hover { border-color: rgba(255, 255, 255, 0.3); transform: scale(1.1); }
+
+.palette-swatch-x {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 14px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.palette-builder-swatch:hover .palette-swatch-x { opacity: 1; }
+
+.palette-builder-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.palette-colour-input {
+    width: 40px;
+    height: 36px;
+    border: var(--border-medium);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    cursor: pointer;
+    padding: 2px;
+}
+
+.palette-colour-input::-webkit-color-swatch-wrapper { padding: 2px; }
+.palette-colour-input::-webkit-color-swatch { border: none; border-radius: 4px; }
+
+/* Scent cards */
+.scent-body {
+    font-family: var(--font-display);
+    font-size: 15px;
+    font-style: italic;
+    color: var(--text-secondary);
+    line-height: 1.7;
+}
+
 /* ═══════ DECORATIVE ═══════ */
 .botanical-accent {
     text-align: center; font-size: 20px; opacity: 0.2;
