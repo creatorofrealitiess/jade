@@ -109,6 +109,7 @@ auth.onAuthStateChanged(async (user) => {
         initJournal();
         initMessenger();
         initAnchors();
+        initPersonas();
     } else {
         currentUser = null;
         document.getElementById('authScreen').style.display = 'flex';
@@ -204,6 +205,7 @@ function nav(pageId) {
     document.getElementById('appSubtitle').textContent = subtitles[pageId] || 'you are here now';
 
     if (pageId === 'journal') journalShowList();
+    if (pageId === 'personas') personasShowList();
 }
 
 document.querySelectorAll('.feature-card[data-page]').forEach(c => c.addEventListener('click', () => nav(c.dataset.page)));
@@ -550,6 +552,292 @@ async function sendMessage() {
 
 document.getElementById('messengerSend').addEventListener('click', sendMessage);
 document.getElementById('messengerInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+// ═══════ PERSONAS (Firestore synced) ═══════
+
+let personasData = [];
+let personasUnsub = null;
+let editingPersonaId = null;
+let personaEditorExtras = [];
+let personaPhotoFile = null;
+let personaPhotoPreview = '';
+
+function initPersonas() {
+    if (personasUnsub) personasUnsub();
+    personasUnsub = db.collection('personas').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
+        personasData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderPersonasList();
+    });
+}
+
+function renderPersonasList() {
+    const container = document.getElementById('personasList');
+    if (personasData.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#129695;</div><p>No personas yet. Tap + to define your Jade self.</p></div>';
+        return;
+    }
+    container.innerHTML = personasData.map(p => {
+        const avatarHtml = p.photoUrl
+            ? '<img src="' + p.photoUrl + '" alt="">'
+            : '<span>' + (p.name || '?')[0].toUpperCase() + '</span>';
+        return '<div class="persona-card" onclick="personaOpen(\'' + p.id + '\')">' +
+            '<div class="persona-card-avatar">' + avatarHtml + '</div>' +
+            '<div class="persona-card-info">' +
+                '<div class="persona-card-name">' + escapeHtml(p.name || 'Unnamed') + '</div>' +
+                (p.age ? '<div class="persona-card-age">' + escapeHtml(p.age) + '</div>' : '') +
+                (p.personality ? '<div class="persona-card-preview">' + escapeHtml(p.personality) + '</div>' : '') +
+            '</div>' +
+            '<div class="persona-card-arrow">&rsaquo;</div>' +
+        '</div>';
+    }).join('');
+}
+
+// ── Views ──
+function personasShowList() {
+    document.getElementById('personasList').style.display = 'block';
+    document.getElementById('personaDetail').style.display = 'none';
+    document.getElementById('personaEditor').style.display = 'none';
+    document.getElementById('personasNewBtn').style.display = 'flex';
+    document.getElementById('personasTitle').textContent = 'Personas';
+    editingPersonaId = null;
+}
+
+function personasBack() {
+    if (document.getElementById('personaEditor').style.display !== 'none') {
+        personaCancelEdit();
+    } else if (document.getElementById('personaDetail').style.display !== 'none') {
+        personasShowList();
+    } else {
+        nav('home');
+    }
+}
+
+function personaOpen(id) {
+    const p = personasData.find(x => x.id === id);
+    if (!p) return;
+    editingPersonaId = id;
+
+    // Avatar
+    const img = document.getElementById('personaDetailAvatarImg');
+    const initial = document.getElementById('personaDetailAvatarInitial');
+    if (p.photoUrl) {
+        img.src = p.photoUrl; img.style.display = 'block'; initial.style.display = 'none';
+    } else {
+        img.style.display = 'none'; initial.style.display = 'block';
+        initial.textContent = (p.name || '?')[0].toUpperCase();
+    }
+
+    document.getElementById('personaDetailName').textContent = p.name || 'Unnamed';
+    document.getElementById('personaDetailAge').textContent = p.age ? 'Age ' + p.age : '';
+
+    // Render fixed fields
+    const fixedFields = [
+        { label: 'Appearance', value: p.appearance },
+        { label: 'Personality', value: p.personality },
+        { label: 'Daily Life', value: p.dailyLife },
+        { label: 'Style', value: p.style },
+        { label: 'Backstory', value: p.backstory }
+    ];
+
+    const extras = p.extras || [];
+    const allFields = [...fixedFields, ...extras.map(e => ({ label: e.label, value: e.value }))];
+
+    document.getElementById('personaDetailFields').innerHTML = allFields
+        .filter(f => f.value)
+        .map(f =>
+            '<div class="persona-detail-field">' +
+                '<div class="persona-detail-field-label">' + escapeHtml(f.label) + '</div>' +
+                '<div class="persona-detail-field-value">' + escapeHtml(f.value) + '</div>' +
+            '</div>'
+        ).join('');
+
+    document.getElementById('personasList').style.display = 'none';
+    document.getElementById('personaDetail').style.display = 'block';
+    document.getElementById('personaEditor').style.display = 'none';
+    document.getElementById('personasNewBtn').style.display = 'none';
+    document.getElementById('personasTitle').textContent = p.name || 'Persona';
+}
+
+// ── Editor ──
+function personaNew() {
+    editingPersonaId = null;
+    personaPhotoFile = null;
+    personaPhotoPreview = '';
+    clearPersonaEditor();
+    showPersonaEditorAvatar('', '?');
+    document.getElementById('personasList').style.display = 'none';
+    document.getElementById('personaDetail').style.display = 'none';
+    document.getElementById('personaEditor').style.display = 'block';
+    document.getElementById('personasNewBtn').style.display = 'none';
+    document.getElementById('personasTitle').textContent = 'New Persona';
+}
+
+function personaEdit() {
+    const p = personasData.find(x => x.id === editingPersonaId);
+    if (!p) return;
+    personaPhotoFile = null;
+    personaPhotoPreview = p.photoUrl || '';
+
+    document.getElementById('personaEdName').value = p.name || '';
+    document.getElementById('personaEdAge').value = p.age || '';
+    document.getElementById('personaEdAppearance').value = p.appearance || '';
+    document.getElementById('personaEdPersonality').value = p.personality || '';
+    document.getElementById('personaEdDailyLife').value = p.dailyLife || '';
+    document.getElementById('personaEdStyle').value = p.style || '';
+    document.getElementById('personaEdBackstory').value = p.backstory || '';
+    personaEditorExtras = (p.extras || []).map(e => ({ ...e }));
+    renderPersonaExtras();
+
+    showPersonaEditorAvatar(p.photoUrl || '', p.name || '?');
+
+    document.getElementById('personaDetail').style.display = 'none';
+    document.getElementById('personaEditor').style.display = 'block';
+    document.getElementById('personasTitle').textContent = 'Edit Persona';
+}
+
+function clearPersonaEditor() {
+    document.getElementById('personaEdName').value = '';
+    document.getElementById('personaEdAge').value = '';
+    document.getElementById('personaEdAppearance').value = '';
+    document.getElementById('personaEdPersonality').value = '';
+    document.getElementById('personaEdDailyLife').value = '';
+    document.getElementById('personaEdStyle').value = '';
+    document.getElementById('personaEdBackstory').value = '';
+    personaEditorExtras = [];
+    renderPersonaExtras();
+}
+
+function showPersonaEditorAvatar(url, name) {
+    const img = document.getElementById('personaEditorAvatarImg');
+    const initial = document.getElementById('personaEditorAvatarInitial');
+    if (url) {
+        img.src = url; img.style.display = 'block'; initial.style.display = 'none';
+    } else {
+        img.style.display = 'none'; initial.style.display = 'block';
+        initial.textContent = (name || '?')[0].toUpperCase();
+    }
+}
+
+function personaCancelEdit() {
+    if (editingPersonaId) {
+        personaOpen(editingPersonaId);
+    } else {
+        personasShowList();
+    }
+}
+
+// ── Extras ──
+function personaAddExtra() {
+    personaEditorExtras.push({ label: '', value: '' });
+    renderPersonaExtras();
+    // Focus the new label input
+    setTimeout(() => {
+        const labels = document.querySelectorAll('.persona-extra-label');
+        if (labels.length) labels[labels.length - 1].focus();
+    }, 50);
+}
+
+function personaRemoveExtra(idx) {
+    personaEditorExtras.splice(idx, 1);
+    renderPersonaExtras();
+}
+
+function renderPersonaExtras() {
+    const container = document.getElementById('personaExtras');
+    container.innerHTML = personaEditorExtras.map((e, i) =>
+        '<div class="persona-extra-item">' +
+            '<div class="persona-extra-item-header">' +
+                '<input class="auth-input persona-extra-label" data-idx="' + i + '" placeholder="Field name..." value="' + escapeHtml(e.label) + '">' +
+                '<button class="affirmation-delete-btn" onclick="personaRemoveExtra(' + i + ')">&times;</button>' +
+            '</div>' +
+            '<textarea class="auth-input persona-extra-value" data-idx="' + i + '" placeholder="Write freely..." rows="2">' + escapeHtml(e.value) + '</textarea>' +
+        '</div>'
+    ).join('');
+
+    // Sync values on input
+    container.querySelectorAll('.persona-extra-label').forEach(el => {
+        el.addEventListener('input', () => { personaEditorExtras[parseInt(el.dataset.idx)].label = el.value; });
+    });
+    container.querySelectorAll('.persona-extra-value').forEach(el => {
+        el.addEventListener('input', () => { personaEditorExtras[parseInt(el.dataset.idx)].value = el.value; });
+    });
+}
+
+// ── Photo Upload ──
+document.getElementById('personaPhotoUpload').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Please choose an image'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+    personaPhotoFile = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        personaPhotoPreview = ev.target.result;
+        showPersonaEditorAvatar(personaPhotoPreview, document.getElementById('personaEdName').value || '?');
+    };
+    reader.readAsDataURL(file);
+});
+
+// Update initial as name is typed
+document.getElementById('personaEdName').addEventListener('input', (e) => {
+    if (!personaPhotoPreview) {
+        const initial = document.getElementById('personaEditorAvatarInitial');
+        initial.textContent = (e.target.value || '?')[0].toUpperCase();
+    }
+});
+
+// ── Save & Delete ──
+async function personaSave() {
+    const name = document.getElementById('personaEdName').value.trim();
+    if (!name) { alert('Give your persona a name'); return; }
+
+    let photoUrl = personaPhotoPreview || '';
+
+    // Upload new photo if selected
+    if (personaPhotoFile) {
+        try {
+            const photoId = editingPersonaId || ('persona_' + Date.now());
+            const ref = storage.ref('personas/' + photoId);
+            await ref.put(personaPhotoFile);
+            photoUrl = await ref.getDownloadURL();
+        } catch (err) {
+            alert('Photo upload failed: ' + err.message);
+            return;
+        }
+    }
+
+    const data = {
+        name,
+        age: document.getElementById('personaEdAge').value.trim(),
+        appearance: document.getElementById('personaEdAppearance').value.trim(),
+        personality: document.getElementById('personaEdPersonality').value.trim(),
+        dailyLife: document.getElementById('personaEdDailyLife').value.trim(),
+        style: document.getElementById('personaEdStyle').value.trim(),
+        backstory: document.getElementById('personaEdBackstory').value.trim(),
+        extras: personaEditorExtras.filter(e => e.label.trim() || e.value.trim()),
+        photoUrl,
+        authorId: currentUser.uid,
+        authorName: currentUserName,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (editingPersonaId) {
+        await db.collection('personas').doc(editingPersonaId).update(data);
+        personaOpen(editingPersonaId);
+    } else {
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        const docRef = await db.collection('personas').add(data);
+        editingPersonaId = docRef.id;
+        personaOpen(docRef.id);
+    }
+}
+
+async function personaDelete() {
+    if (!editingPersonaId) return;
+    if (!confirm('Delete this persona?')) return;
+    await db.collection('personas').doc(editingPersonaId).delete();
+    personasShowList();
+}
 
 // ═══════ SENSORY ANCHORS (Firestore synced) ═══════
 

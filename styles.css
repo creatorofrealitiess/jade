@@ -960,6 +960,238 @@ body::after {
 .settings-label { font-size: 14px; color: var(--text-primary); }
 .settings-value { font-size: 13px; color: var(--text-muted); }
 
+/* ═══════ PERSONAS ═══════ */
+.personas-list { display: flex; flex-direction: column; gap: var(--space-md); }
+
+.persona-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: var(--border-subtle);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+}
+
+.persona-card:hover { box-shadow: var(--shadow-soft); border-color: rgba(90, 158, 122, 0.2); }
+
+.persona-card-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 2px solid var(--jade-pale);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.persona-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.persona-card-avatar span {
+    font-family: var(--font-display);
+    font-size: 22px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.persona-card-info { flex: 1; min-width: 0; }
+
+.persona-card-name {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.persona-card-age {
+    font-family: var(--font-handwritten);
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 1px;
+}
+
+.persona-card-preview {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.persona-card-arrow {
+    font-size: 24px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+}
+
+/* Detail View */
+.persona-detail { animation: fadeIn 0.3s ease; }
+
+.persona-detail-hero {
+    text-align: center;
+    padding: var(--space-lg) 0 var(--space-xl);
+}
+
+.persona-detail-avatar {
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 3px solid var(--jade-pale);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-md);
+}
+
+.persona-detail-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.persona-detail-avatar span {
+    font-family: var(--font-display);
+    font-size: 36px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.persona-detail-name {
+    font-family: var(--font-display);
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.persona-detail-age {
+    font-family: var(--font-handwritten);
+    font-size: 16px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+.persona-detail-actions {
+    display: flex;
+    gap: var(--space-sm);
+    justify-content: center;
+    margin-top: var(--space-md);
+}
+
+.persona-detail-fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding-bottom: var(--space-xl);
+}
+
+.persona-detail-field {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    border: var(--border-subtle);
+}
+
+.persona-detail-field-label {
+    font-family: var(--font-handwritten);
+    font-size: 14px;
+    color: var(--jade-primary);
+    margin-bottom: var(--space-sm);
+    letter-spacing: 0.5px;
+}
+
+.persona-detail-field-value {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-style: italic;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+/* Editor */
+.persona-editor { animation: fadeIn 0.3s ease; padding-bottom: var(--space-xl); }
+
+.persona-editor-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+}
+
+.persona-editor-avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 2px solid var(--jade-pale);
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.persona-editor-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.persona-editor-avatar span {
+    font-family: var(--font-display);
+    font-size: 28px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.persona-field-input {
+    width: 100%;
+    margin-bottom: var(--space-sm);
+    resize: none;
+}
+
+.persona-extras-section {
+    margin-top: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: var(--border-subtle);
+}
+
+.persona-extras-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-md);
+}
+
+.persona-extras-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+}
+
+.persona-extra-item {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    border: var(--border-subtle);
+}
+
+.persona-extra-item-header {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    margin-bottom: var(--space-sm);
+}
+
+.persona-extra-label {
+    flex: 1;
+    font-family: var(--font-handwritten) !important;
+    font-size: 15px !important;
+}
+
+.persona-extra-value {
+    width: 100%;
+    resize: none;
+}
+
 /* ═══════ SENSORY ANCHORS ═══════ */
 .anchors-intro {
     font-family: var(--font-handwritten);
