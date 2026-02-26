@@ -18,6 +18,7 @@ const storage = firebase.storage();
 
 let currentUser = null;
 let currentUserName = '';
+let currentUserAvatar = '';
 
 // ═══════ AUTHENTICATION ═══════
 
@@ -87,6 +88,19 @@ auth.onAuthStateChanged(async (user) => {
         document.getElementById('settingsEmail').textContent = user.email;
         document.getElementById('settingsName').textContent = currentUserName;
 
+        // Load avatar from Firestore user doc
+        try {
+            const userDoc = await db.collection('users').doc(user.uid).get();
+            if (userDoc.exists && userDoc.data().avatarUrl) {
+                currentUserAvatar = userDoc.data().avatarUrl;
+                showSettingsAvatar(currentUserAvatar, currentUserName);
+            } else {
+                showSettingsAvatar('', currentUserName);
+            }
+        } catch (e) {
+            showSettingsAvatar('', currentUserName);
+        }
+
         const savedKey = localStorage.getItem('jade_gemini_key');
         if (savedKey) document.getElementById('geminiApiKey').value = savedKey;
 
@@ -100,6 +114,20 @@ auth.onAuthStateChanged(async (user) => {
         document.getElementById('app').style.display = 'none';
     }
 });
+
+function showSettingsAvatar(url, name) {
+    const img = document.getElementById('settingsAvatarImg');
+    const initial = document.getElementById('settingsAvatarInitial');
+    if (url) {
+        img.src = url;
+        img.style.display = 'block';
+        initial.style.display = 'none';
+    } else {
+        img.style.display = 'none';
+        initial.style.display = 'block';
+        initial.textContent = (name || '?')[0].toUpperCase();
+    }
+}
 
 function signOut() { if (confirm('Sign out of Jade?')) auth.signOut(); }
 
@@ -117,11 +145,41 @@ async function updateDisplayName() {
         currentUserName = newName;
         document.getElementById('settingsName').textContent = newName;
         document.getElementById('settingsNameInput').value = '';
+        // Update cache for messenger
+        if (userDataCache[currentUser.uid]) {
+            userDataCache[currentUser.uid].name = newName;
+        }
+        showSettingsAvatar(currentUserAvatar, newName);
         alert('Name updated to ' + newName + '!');
     } catch (err) {
         alert('Error updating name: ' + err.message);
     }
 }
+
+document.getElementById('avatarUpload').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Please choose an image'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+
+    const btn = document.querySelector('.settings-avatar-btn');
+    btn.textContent = 'Uploading...';
+
+    try {
+        const ref = storage.ref('avatars/' + currentUser.uid);
+        await ref.put(file);
+        const url = await ref.getDownloadURL();
+        await db.collection('users').doc(currentUser.uid).update({ avatarUrl: url });
+        currentUserAvatar = url;
+        showSettingsAvatar(url, currentUserName);
+        // Refresh the user cache so messenger picks it up
+        userDataCache[currentUser.uid] = { name: currentUserName, avatar: url };
+        btn.textContent = 'Change Photo';
+    } catch (err) {
+        alert('Upload failed: ' + err.message);
+        btn.textContent = 'Change Photo';
+    }
+});
 
 // ═══════ NAVIGATION ═══════
 
@@ -237,10 +295,16 @@ function renderAffList() {
 
 // ═══════ ALIGNMENT TRACKER (Firestore synced) ═══════
 
+let alignmentData = {};
+
 function initAlignmentTracker() {
     const today = new Date().toISOString().split('T')[0];
-    db.collection('shared').doc('alignment').get().then(doc => {
-        if (doc.exists && doc.data()[today]) fillAlignment(doc.data()[today]);
+    db.collection('shared').doc('alignment').onSnapshot(doc => {
+        if (doc.exists) {
+            alignmentData = doc.data();
+            if (alignmentData[today]) fillAlignment(alignmentData[today]);
+            renderAlignmentChart();
+        }
     });
 }
 
@@ -258,6 +322,50 @@ document.getElementById('alignmentScale').addEventListener('click', (e) => {
     const today = new Date().toISOString().split('T')[0];
     db.collection('shared').doc('alignment').set({ [today]: level }, { merge: true });
 });
+
+document.getElementById('alignmentHistoryToggle').addEventListener('click', () => {
+    const chart = document.getElementById('alignmentChart');
+    const btn = document.getElementById('alignmentHistoryToggle');
+    if (chart.style.display === 'none') {
+        chart.style.display = 'flex';
+        btn.textContent = 'hide';
+        renderAlignmentChart();
+    } else {
+        chart.style.display = 'none';
+        btn.textContent = 'show';
+    }
+});
+
+function renderAlignmentChart() {
+    const chart = document.getElementById('alignmentChart');
+    if (chart.style.display === 'none') return;
+    
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const days = [];
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        days.push({
+            date: dateStr,
+            label: dayNames[d.getDay()],
+            level: alignmentData[dateStr] || 0,
+            isToday: dateStr === todayStr
+        });
+    }
+    
+    chart.innerHTML = days.map(day => {
+        const heightPct = day.level > 0 ? (day.level / 7) * 100 : 0;
+        const barClass = day.level === 0 ? 'alignment-chart-bar empty' : ('alignment-chart-bar' + (day.isToday ? ' today' : ''));
+        const labelClass = 'alignment-chart-label' + (day.isToday ? ' today' : '');
+        return '<div class="alignment-chart-day">' +
+            '<div class="alignment-chart-bar-wrap"><div class="' + barClass + '" style="height:' + (day.level > 0 ? heightPct + '%' : '2px') + '"></div></div>' +
+            '<span class="' + labelClass + '">' + day.label + '</span></div>';
+    }).join('');
+}
 
 // ═══════ JOURNAL (Firestore synced) ═══════
 
@@ -361,19 +469,35 @@ async function journalDelete() {
 // ═══════ MESSENGER (Firestore real-time) ═══════
 
 let messengerUnsub = null;
-let userNameCache = {};
+let userDataCache = {};
 
-async function loadUserNames() {
+async function loadUserData() {
     const snapshot = await db.collection('users').get();
     snapshot.docs.forEach(doc => {
-        userNameCache[doc.id] = doc.data().displayName || 'Unknown';
+        const data = doc.data();
+        userDataCache[doc.id] = {
+            name: data.displayName || 'Unknown',
+            avatar: data.avatarUrl || ''
+        };
     });
+}
+
+function buildAvatarHtml(uid, name) {
+    const userData = userDataCache[uid];
+    const avatarUrl = userData ? userData.avatar : '';
+    const displayName = userData ? userData.name : (name || '?');
+    
+    if (avatarUrl) {
+        return '<div class="msg-avatar"><img src="' + avatarUrl + '" alt=""></div>';
+    } else {
+        return '<div class="msg-avatar"><span class="msg-avatar-initial">' + displayName[0].toUpperCase() + '</span></div>';
+    }
 }
 
 function initMessenger() {
     if (messengerUnsub) messengerUnsub();
     
-    loadUserNames().then(() => {
+    loadUserData().then(() => {
         messengerUnsub = db.collection('messages').orderBy('sentAt', 'asc').limitToLast(100).onSnapshot(snapshot => {
             const container = document.getElementById('messengerMessages');
             container.innerHTML = '';
@@ -387,22 +511,24 @@ function initMessenger() {
                 const msg = doc.data();
                 const isMine = msg.senderId === currentUser.uid;
                 const time = msg.sentAt ? new Date(msg.sentAt.seconds * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
-                const div = document.createElement('div');
-                div.className = 'msg ' + (isMine ? 'sent' : 'received');
                 
-                let html = '';
+                const row = document.createElement('div');
+                row.className = 'msg-row ' + (isMine ? 'sent' : 'received');
+                
+                const avatarHtml = buildAvatarHtml(msg.senderId, msg.senderName);
+                
+                let msgHtml = '';
                 if (!isMine) {
-                    // Use live name from users collection, fall back to stored senderName
-                    const senderName = userNameCache[msg.senderId] || msg.senderName || 'Unknown';
-                    html += '<span class="msg-sender">' + senderName.replace(/</g, '&lt;') + '</span>';
+                    const senderName = (userDataCache[msg.senderId] ? userDataCache[msg.senderId].name : null) || msg.senderName || 'Unknown';
+                    msgHtml += '<span class="msg-sender">' + senderName.replace(/</g, '&lt;') + '</span>';
                 }
                 const safeText = document.createElement('span');
                 safeText.textContent = msg.text;
-                html += safeText.innerHTML;
-                html += '<span class="msg-time">' + time + '</span>';
+                msgHtml += safeText.innerHTML;
+                msgHtml += '<span class="msg-time">' + time + '</span>';
                 
-                div.innerHTML = html;
-                container.appendChild(div);
+                row.innerHTML = avatarHtml + '<div class="msg ' + (isMine ? 'sent' : 'received') + '">' + msgHtml + '</div>';
+                container.appendChild(row);
             });
 
             container.scrollTop = container.scrollHeight;
