@@ -111,6 +111,8 @@ auth.onAuthStateChanged(async (user) => {
         initAnchors();
         initPersonas();
         initConnections();
+        initWorld();
+        initSpace();
     } else {
         currentUser = null;
         document.getElementById('authScreen').style.display = 'flex';
@@ -188,7 +190,7 @@ document.getElementById('avatarUpload').addEventListener('change', async (e) => 
 
 const subtitles = {
     home: 'you are here now', world: "the world you've built", personas: 'who we are in jade',
-    connections: 'your people', space: 'us, pets, home & the world', journal: 'write from within',
+    connections: 'your people', space: 'memories & moments', journal: 'write from within',
     messenger: 'conversations in jade', gallery: 'memories & moments', timeline: 'the story so far',
     anchors: 'pull yourself in', settings: 'configuration'
 };
@@ -208,6 +210,8 @@ function nav(pageId) {
     if (pageId === 'journal') journalShowList();
     if (pageId === 'personas') personasShowList();
     if (pageId === 'connections') connectionsShowList();
+    if (pageId === 'world') worldShowList();
+    if (pageId === 'space') spaceShowAlbums();
 }
 
 document.querySelectorAll('.feature-card[data-page]').forEach(c => c.addEventListener('click', () => nav(c.dataset.page)));
@@ -1385,6 +1389,626 @@ function renderScents() {
             (s.body ? '<p class="scent-body">' + escapeHtml(s.body) + '</p>' : '') +
         '</div>'
     ).join('');
+}
+
+// ═══════ WORLD / LOCATIONS (Firestore synced) ═══════
+
+let worldData = [];
+let worldUnsub = null;
+let editingWorldId = null;
+let worldEditorExtras = [];
+let worldPhotoFile = null;
+let worldPhotoPreview = '';
+let worldSelectedType = '';
+let worldFilter = 'all';
+
+const worldTypeIcons = {
+    home: '\u{1F3E0}', village: '\u{1F3D8}\uFE0F', nature: '\u{1F333}',
+    landmark: '\u{1F4CC}', shop: '\u{1F6D2}', secret: '\u2728'
+};
+
+const worldTypeColours = {
+    home: { bg: 'rgba(201, 164, 90, 0.15)', color: 'var(--honey)' },
+    village: { bg: 'rgba(106, 150, 176, 0.15)', color: 'var(--sky)' },
+    nature: { bg: 'rgba(90, 158, 122, 0.15)', color: 'var(--jade-primary)' },
+    landmark: { bg: 'rgba(155, 138, 184, 0.15)', color: 'var(--lavender)' },
+    shop: { bg: 'rgba(201, 164, 90, 0.15)', color: 'var(--honey)' },
+    secret: { bg: 'rgba(201, 134, 126, 0.15)', color: 'var(--rose)' }
+};
+
+function initWorld() {
+    if (worldUnsub) worldUnsub();
+    worldUnsub = db.collection('world').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
+        worldData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderWorldList();
+    });
+}
+
+function renderWorldList() {
+    const container = document.getElementById('worldList');
+    const filtered = worldFilter === 'all' ? worldData : worldData.filter(w => w.type === worldFilter);
+
+    if (worldData.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#127807;</div><p>No places yet. Tap + to build the first corner of your Jade world.</p></div>';
+        return;
+    }
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:var(--space-xl) 0"><p>No ' + worldFilter + ' places yet.</p></div>';
+        return;
+    }
+
+    container.innerHTML = filtered.map(w => {
+        const icon = worldTypeIcons[w.type] || '\u{1F33F}';
+        const avatarHtml = w.photoUrl ? '<img src="' + w.photoUrl + '" alt="">' : '<span>' + icon + '</span>';
+        return '<div class="persona-card world-card" onclick="worldOpen(\'' + w.id + '\')">' +
+            '<div class="persona-card-avatar world-card-avatar">' + avatarHtml + '</div>' +
+            '<div class="persona-card-info">' +
+                '<div class="persona-card-name">' + escapeHtml(w.name || 'Unnamed') + '</div>' +
+                '<div class="persona-card-age">' + escapeHtml(w.type || '') + '</div>' +
+                (w.description ? '<div class="persona-card-preview">' + escapeHtml(w.description) + '</div>' : '') +
+            '</div><div class="persona-card-arrow">&rsaquo;</div></div>';
+    }).join('');
+}
+
+function filterWorld(type) {
+    worldFilter = type;
+    document.querySelectorAll('#worldFilters .connections-filter').forEach(f => f.classList.toggle('active', f.dataset.filter === type));
+    renderWorldList();
+}
+
+function worldShowList() {
+    document.getElementById('worldList').style.display = 'block';
+    document.getElementById('worldDetail').style.display = 'none';
+    document.getElementById('worldEditor').style.display = 'none';
+    document.getElementById('worldNewBtn').style.display = 'flex';
+    document.getElementById('worldFilters').style.display = 'flex';
+    document.getElementById('worldTitle').textContent = 'The World';
+    editingWorldId = null;
+}
+
+function worldBack() {
+    if (document.getElementById('worldEditor').style.display !== 'none') worldCancelEdit();
+    else if (document.getElementById('worldDetail').style.display !== 'none') worldShowList();
+    else nav('home');
+}
+
+function worldOpen(id) {
+    const w = worldData.find(x => x.id === id);
+    if (!w) return;
+    editingWorldId = id;
+
+    const img = document.getElementById('worldDetailPhotoImg');
+    const placeholder = document.getElementById('worldDetailPhotoPlaceholder');
+    if (w.photoUrl) { img.src = w.photoUrl; img.style.display = 'block'; placeholder.style.display = 'none'; }
+    else { img.style.display = 'none'; placeholder.style.display = 'flex'; document.getElementById('worldDetailPhotoIcon').textContent = worldTypeIcons[w.type] || '\u{1F33F}'; }
+
+    document.getElementById('worldDetailName').textContent = w.name || 'Unnamed';
+    const tagEl = document.getElementById('worldDetailTag');
+    if (w.type) {
+        const colours = worldTypeColours[w.type] || worldTypeColours.nature;
+        tagEl.textContent = (worldTypeIcons[w.type] || '') + ' ' + w.type;
+        tagEl.style.background = colours.bg; tagEl.style.color = colours.color; tagEl.style.display = 'inline-block';
+    } else { tagEl.style.display = 'none'; }
+
+    const fixedFields = [
+        { label: 'Description', value: w.description }, { label: 'Atmosphere', value: w.atmosphere },
+        { label: 'Sensory Details', value: w.sensory }, { label: 'Memories', value: w.memories },
+        { label: 'Seasons', value: w.seasons }, { label: 'Lore', value: w.lore }
+    ];
+    const extras = w.extras || [];
+    const allFields = [...fixedFields, ...extras.map(e => ({ label: e.label, value: e.value }))];
+    document.getElementById('worldDetailFields').innerHTML = allFields.filter(f => f.value).map(f =>
+        '<div class="persona-detail-field"><div class="persona-detail-field-label">' + escapeHtml(f.label) + '</div><div class="persona-detail-field-value">' + escapeHtml(f.value) + '</div></div>'
+    ).join('');
+
+    document.getElementById('worldList').style.display = 'none';
+    document.getElementById('worldDetail').style.display = 'block';
+    document.getElementById('worldEditor').style.display = 'none';
+    document.getElementById('worldNewBtn').style.display = 'none';
+    document.getElementById('worldFilters').style.display = 'none';
+    document.getElementById('worldTitle').textContent = w.name || 'Place';
+}
+
+function worldNew() {
+    editingWorldId = null; worldPhotoFile = null; worldPhotoPreview = ''; worldSelectedType = '';
+    clearWorldEditor(); showWorldEditorPhoto('', ''); updateWorldTypeBtns();
+    document.getElementById('worldList').style.display = 'none';
+    document.getElementById('worldDetail').style.display = 'none';
+    document.getElementById('worldEditor').style.display = 'block';
+    document.getElementById('worldNewBtn').style.display = 'none';
+    document.getElementById('worldFilters').style.display = 'none';
+    document.getElementById('worldTitle').textContent = 'New Place';
+}
+
+function worldEdit() {
+    const w = worldData.find(x => x.id === editingWorldId);
+    if (!w) return;
+    worldPhotoFile = null; worldPhotoPreview = w.photoUrl || ''; worldSelectedType = w.type || '';
+    document.getElementById('worldEdName').value = w.name || '';
+    document.getElementById('worldEdDescription').value = w.description || '';
+    document.getElementById('worldEdAtmosphere').value = w.atmosphere || '';
+    document.getElementById('worldEdSensory').value = w.sensory || '';
+    document.getElementById('worldEdMemories').value = w.memories || '';
+    document.getElementById('worldEdSeasons').value = w.seasons || '';
+    document.getElementById('worldEdLore').value = w.lore || '';
+    worldEditorExtras = (w.extras || []).map(e => ({ ...e }));
+    renderWorldExtras(); updateWorldTypeBtns(); showWorldEditorPhoto(w.photoUrl || '', w.type);
+    document.getElementById('worldDetail').style.display = 'none';
+    document.getElementById('worldEditor').style.display = 'block';
+    document.getElementById('worldFilters').style.display = 'none';
+    document.getElementById('worldTitle').textContent = 'Edit Place';
+}
+
+function clearWorldEditor() {
+    ['worldEdName','worldEdDescription','worldEdAtmosphere','worldEdSensory','worldEdMemories','worldEdSeasons','worldEdLore'].forEach(id => document.getElementById(id).value = '');
+    worldEditorExtras = []; renderWorldExtras();
+}
+
+function showWorldEditorPhoto(url, type) {
+    const img = document.getElementById('worldEditorPhotoImg');
+    const icon = document.getElementById('worldEditorPhotoIcon');
+    if (url) { img.src = url; img.style.display = 'block'; icon.style.display = 'none'; }
+    else { img.style.display = 'none'; icon.style.display = 'block'; icon.textContent = worldTypeIcons[type] || '\u{1F33F}'; }
+}
+
+function worldCancelEdit() { if (editingWorldId) worldOpen(editingWorldId); else worldShowList(); }
+
+function pickWorldType(type) {
+    worldSelectedType = (worldSelectedType === type) ? '' : type;
+    updateWorldTypeBtns();
+    if (!worldPhotoPreview) document.getElementById('worldEditorPhotoIcon').textContent = worldTypeIcons[worldSelectedType] || '\u{1F33F}';
+}
+
+function updateWorldTypeBtns() {
+    document.querySelectorAll('#worldTypeOptions .connection-type-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.type === worldSelectedType));
+}
+
+function worldAddExtra() {
+    worldEditorExtras.push({ label: '', value: '' }); renderWorldExtras();
+    setTimeout(() => { const l = document.querySelectorAll('#worldExtras .persona-extra-label'); if (l.length) l[l.length-1].focus(); }, 50);
+}
+function worldRemoveExtra(idx) { worldEditorExtras.splice(idx, 1); renderWorldExtras(); }
+
+function renderWorldExtras() {
+    const container = document.getElementById('worldExtras');
+    container.innerHTML = worldEditorExtras.map((e, i) =>
+        '<div class="persona-extra-item"><div class="persona-extra-item-header">' +
+        '<input class="auth-input persona-extra-label" data-idx="' + i + '" placeholder="Field name..." value="' + escapeHtml(e.label) + '">' +
+        '<button class="affirmation-delete-btn" onclick="worldRemoveExtra(' + i + ')">&times;</button></div>' +
+        '<textarea class="auth-input persona-extra-value" data-idx="' + i + '" placeholder="Write freely..." rows="2">' + escapeHtml(e.value) + '</textarea></div>'
+    ).join('');
+    container.querySelectorAll('.persona-extra-label').forEach(el => { el.addEventListener('input', () => { worldEditorExtras[parseInt(el.dataset.idx)].label = el.value; }); });
+    container.querySelectorAll('.persona-extra-value').forEach(el => { el.addEventListener('input', () => { worldEditorExtras[parseInt(el.dataset.idx)].value = el.value; }); });
+}
+
+document.getElementById('worldPhotoUpload').addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Please choose an image'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+    worldPhotoFile = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => { worldPhotoPreview = ev.target.result; showWorldEditorPhoto(worldPhotoPreview, worldSelectedType); };
+    reader.readAsDataURL(file);
+});
+
+async function worldSave() {
+    const name = document.getElementById('worldEdName').value.trim();
+    if (!name) { alert('Give this place a name'); return; }
+    let photoUrl = worldPhotoPreview || '';
+    if (worldPhotoFile) {
+        try {
+            const photoId = editingWorldId || ('world_' + Date.now());
+            const ref = storage.ref('world/' + photoId); await ref.put(worldPhotoFile); photoUrl = await ref.getDownloadURL();
+        } catch (err) { alert('Photo upload failed: ' + err.message); return; }
+    }
+    const data = {
+        name, type: worldSelectedType,
+        description: document.getElementById('worldEdDescription').value.trim(),
+        atmosphere: document.getElementById('worldEdAtmosphere').value.trim(),
+        sensory: document.getElementById('worldEdSensory').value.trim(),
+        memories: document.getElementById('worldEdMemories').value.trim(),
+        seasons: document.getElementById('worldEdSeasons').value.trim(),
+        lore: document.getElementById('worldEdLore').value.trim(),
+        extras: worldEditorExtras.filter(e => e.label.trim() || e.value.trim()),
+        photoUrl, authorId: currentUser.uid, authorName: currentUserName,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+    if (editingWorldId) { await db.collection('world').doc(editingWorldId).update(data); worldOpen(editingWorldId); }
+    else { data.createdAt = firebase.firestore.FieldValue.serverTimestamp(); const docRef = await db.collection('world').add(data); editingWorldId = docRef.id; worldOpen(docRef.id); }
+}
+
+async function worldDelete() {
+    if (!editingWorldId) return;
+    if (!confirm('Delete this place?')) return;
+    await db.collection('world').doc(editingWorldId).delete(); worldShowList();
+}
+
+// ═══════ OUR SPACE — Album-Based Photo Gallery ═══════
+
+const DEFAULT_ALBUMS = ['All of Us', 'Pets', 'Home', 'In the World'];
+let spaceAlbums = [];
+let spacePhotos = [];
+let spaceAlbumsUnsub = null;
+let spacePhotosUnsub = null;
+let currentAlbumId = null;
+let currentPhotoId = null;
+let spaceGenController = null;
+let spaceGeneratedImageData = null;
+
+function initSpace() {
+    // Init default albums if none exist
+    const albumsRef = db.collection('spaceAlbums');
+    albumsRef.get().then(snapshot => {
+        if (snapshot.empty) {
+            DEFAULT_ALBUMS.forEach((name, i) => {
+                albumsRef.add({
+                    name, order: i, isDefault: true,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    authorId: currentUser.uid, authorName: currentUserName
+                });
+            });
+        }
+    });
+
+    if (spaceAlbumsUnsub) spaceAlbumsUnsub();
+    spaceAlbumsUnsub = albumsRef.orderBy('order', 'asc').onSnapshot(snapshot => {
+        spaceAlbums = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderSpaceAlbums();
+    });
+
+    if (spacePhotosUnsub) spacePhotosUnsub();
+    spacePhotosUnsub = db.collection('spacePhotos').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        spacePhotos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        if (currentAlbumId) renderSpacePhotoGrid();
+    });
+}
+
+// ── Album Views ──
+function spaceShowAlbums() {
+    document.getElementById('spaceAlbums').style.display = 'grid';
+    document.getElementById('spaceAlbumView').style.display = 'none';
+    document.getElementById('spacePhotoDetail').style.display = 'none';
+    document.getElementById('spaceAddAlbumBtn').style.display = 'flex';
+    document.getElementById('spaceTitle').textContent = 'Our Space';
+    currentAlbumId = null; currentPhotoId = null;
+}
+
+function spaceBack() {
+    if (document.getElementById('spacePhotoDetail').style.display !== 'none') {
+        spaceOpenAlbum(currentAlbumId);
+    } else if (document.getElementById('spaceAlbumView').style.display !== 'none') {
+        spaceShowAlbums();
+    } else {
+        nav('home');
+    }
+}
+
+function renderSpaceAlbums() {
+    const container = document.getElementById('spaceAlbums');
+    if (spaceAlbums.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">&#127969;</div><p>Setting up your albums...</p></div>';
+        return;
+    }
+
+    container.innerHTML = spaceAlbums.map(album => {
+        const albumPhotos = spacePhotos.filter(p => p.albumId === album.id);
+        const coverPhoto = albumPhotos[0];
+        const count = albumPhotos.length;
+
+        const coverHtml = coverPhoto
+            ? '<img src="' + coverPhoto.url + '" alt="" class="space-album-cover-img">'
+            : '<div class="space-album-cover-empty"><span>' + albumIcon(album.name) + '</span></div>';
+
+        return '<div class="space-album-card" onclick="spaceOpenAlbum(\'' + album.id + '\')">' +
+            '<div class="space-album-cover">' + coverHtml + '</div>' +
+            '<div class="space-album-info">' +
+                '<div class="space-album-name">' + escapeHtml(album.name) + '</div>' +
+                '<div class="space-album-meta">' + count + ' photo' + (count !== 1 ? 's' : '') + '</div>' +
+            '</div>' +
+            (!album.isDefault ? '<button class="space-album-delete" onclick="event.stopPropagation();spaceDeleteAlbum(\'' + album.id + '\')" title="Delete album">&times;</button>' : '') +
+        '</div>';
+    }).join('');
+}
+
+function albumIcon(name) {
+    const n = name.toLowerCase();
+    if (n.includes('us') || n.includes('all')) return '\u{1F491}';
+    if (n.includes('pet')) return '\u{1F43E}';
+    if (n.includes('home')) return '\u{1F3E1}';
+    if (n.includes('world')) return '\u{1F30D}';
+    return '\u{1F4F7}';
+}
+
+function spaceOpenAlbum(albumId) {
+    currentAlbumId = albumId;
+    currentPhotoId = null;
+    const album = spaceAlbums.find(a => a.id === albumId);
+    document.getElementById('spaceTitle').textContent = album ? album.name : 'Album';
+    document.getElementById('spaceAlbums').style.display = 'none';
+    document.getElementById('spaceAlbumView').style.display = 'block';
+    document.getElementById('spacePhotoDetail').style.display = 'none';
+    document.getElementById('spaceAddAlbumBtn').style.display = 'none';
+    renderSpacePhotoGrid();
+}
+
+function renderSpacePhotoGrid() {
+    const container = document.getElementById('spacePhotoGrid');
+    const photos = spacePhotos.filter(p => p.albumId === currentAlbumId);
+    document.getElementById('spaceAlbumCount').textContent = photos.length + ' photo' + (photos.length !== 1 ? 's' : '');
+
+    if (photos.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">&#128247;</div><p>No photos yet. Upload or generate your first image.</p></div>';
+        return;
+    }
+
+    container.innerHTML = photos.map(p =>
+        '<div class="space-photo-thumb" onclick="spaceOpenPhoto(\'' + p.id + '\')">' +
+            '<img src="' + p.url + '" alt="" loading="lazy">' +
+            (p.caption ? '<div class="space-photo-thumb-caption">' + escapeHtml(p.caption) + '</div>' : '') +
+        '</div>'
+    ).join('');
+}
+
+// ── Photo Detail ──
+function spaceOpenPhoto(photoId) {
+    const photo = spacePhotos.find(p => p.id === photoId);
+    if (!photo) return;
+    currentPhotoId = photoId;
+
+    document.getElementById('spacePhotoDetailImg').src = photo.url;
+    document.getElementById('spacePhotoDetailCaption').textContent = photo.caption || '';
+    document.getElementById('spacePhotoDetailCaption').style.display = photo.caption ? 'block' : 'none';
+
+    const date = photo.createdAt ? new Date(photo.createdAt.seconds * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    const source = photo.source === 'generated' ? 'Generated with Nano Banana Pro' : 'Uploaded';
+    document.getElementById('spacePhotoDetailMeta').textContent = source + (date ? ' · ' + date : '');
+
+    document.getElementById('spaceAlbumView').style.display = 'none';
+    document.getElementById('spacePhotoDetail').style.display = 'block';
+}
+
+// ── Photo Upload ──
+document.getElementById('spacePhotoUpload').addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+        if (file.size > 10 * 1024 * 1024) { alert(file.name + ' is too large (max 10MB)'); continue; }
+
+        try {
+            const photoId = 'space_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+            const ref = storage.ref('space/' + photoId);
+            await ref.put(file);
+            const url = await ref.getDownloadURL();
+
+            await db.collection('spacePhotos').add({
+                url, albumId: currentAlbumId,
+                caption: '', source: 'uploaded',
+                authorId: currentUser.uid, authorName: currentUserName,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        } catch (err) {
+            alert('Upload failed: ' + err.message);
+        }
+    }
+    e.target.value = '';
+});
+
+// ── Caption Edit ──
+function spaceEditCaption() {
+    const photo = spacePhotos.find(p => p.id === currentPhotoId);
+    if (!photo) return;
+    document.getElementById('spaceEditCaptionInput').value = photo.caption || '';
+    document.getElementById('spaceEditCaptionModal').classList.add('visible');
+}
+
+async function spaceSaveCaption() {
+    if (!currentPhotoId) return;
+    const caption = document.getElementById('spaceEditCaptionInput').value.trim();
+    await db.collection('spacePhotos').doc(currentPhotoId).update({ caption });
+    document.getElementById('spacePhotoDetailCaption').textContent = caption;
+    document.getElementById('spacePhotoDetailCaption').style.display = caption ? 'block' : 'none';
+    document.getElementById('spaceEditCaptionModal').classList.remove('visible');
+}
+
+// ── Move Photo ──
+function spaceMovePhoto() {
+    const container = document.getElementById('spaceMoveAlbumList');
+    container.innerHTML = spaceAlbums.map(a =>
+        '<div class="space-move-item' + (a.id === currentAlbumId ? ' current' : '') + '" onclick="spaceDoMove(\'' + a.id + '\')">' +
+            '<span>' + albumIcon(a.name) + '</span> ' + escapeHtml(a.name) +
+            (a.id === currentAlbumId ? ' <span style="color:var(--text-faint)">(current)</span>' : '') +
+        '</div>'
+    ).join('');
+    document.getElementById('spaceMoveModal').classList.add('visible');
+}
+
+async function spaceDoMove(albumId) {
+    if (!currentPhotoId || albumId === currentAlbumId) return;
+    await db.collection('spacePhotos').doc(currentPhotoId).update({ albumId });
+    document.getElementById('spaceMoveModal').classList.remove('visible');
+    currentAlbumId = albumId;
+    const album = spaceAlbums.find(a => a.id === albumId);
+    document.getElementById('spaceTitle').textContent = album ? album.name : 'Album';
+    spaceOpenPhoto(currentPhotoId);
+}
+
+// ── Delete Photo ──
+async function spaceDeletePhoto() {
+    if (!currentPhotoId) return;
+    if (!confirm('Delete this photo?')) return;
+    await db.collection('spacePhotos').doc(currentPhotoId).delete();
+    currentPhotoId = null;
+    spaceOpenAlbum(currentAlbumId);
+}
+
+// ── Album Management ──
+function spaceNewAlbum() {
+    document.getElementById('spaceNewAlbumName').value = '';
+    document.getElementById('spaceNewAlbumModal').classList.add('visible');
+    setTimeout(() => document.getElementById('spaceNewAlbumName').focus(), 100);
+}
+
+async function spaceCreateAlbum() {
+    const name = document.getElementById('spaceNewAlbumName').value.trim();
+    if (!name) return;
+    await db.collection('spaceAlbums').add({
+        name, order: spaceAlbums.length, isDefault: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        authorId: currentUser.uid, authorName: currentUserName
+    });
+    document.getElementById('spaceNewAlbumModal').classList.remove('visible');
+}
+
+async function spaceDeleteAlbum(albumId) {
+    const album = spaceAlbums.find(a => a.id === albumId);
+    if (!album || album.isDefault) return;
+    const photos = spacePhotos.filter(p => p.albumId === albumId);
+    if (!confirm('Delete "' + album.name + '"' + (photos.length ? ' and its ' + photos.length + ' photo(s)' : '') + '?')) return;
+    // Delete photos in album
+    for (const p of photos) { await db.collection('spacePhotos').doc(p.id).delete(); }
+    await db.collection('spaceAlbums').doc(albumId).delete();
+    if (currentAlbumId === albumId) spaceShowAlbums();
+}
+
+// ═══════ NANO BANANA PRO — Gemini Image Generation ═══════
+
+function spaceOpenGenerate() {
+    document.getElementById('spaceGenPrompt').value = '';
+    document.getElementById('spaceGenPreview').style.display = 'none';
+    document.getElementById('spaceGenLoading').style.display = 'none';
+    document.getElementById('spaceGenError').textContent = '';
+    document.getElementById('spaceGenBtn').style.display = 'block';
+    spaceGeneratedImageData = null;
+    document.getElementById('spaceGenerateModal').classList.add('visible');
+    setTimeout(() => document.getElementById('spaceGenPrompt').focus(), 100);
+}
+
+function spaceCloseGenerate() {
+    document.getElementById('spaceGenerateModal').classList.remove('visible');
+    if (spaceGenController) { spaceGenController.abort(); spaceGenController = null; }
+}
+
+async function spaceGenerate() {
+    const prompt = document.getElementById('spaceGenPrompt').value.trim();
+    if (!prompt) return;
+
+    const apiKey = localStorage.getItem('jade_gemini_key');
+    if (!apiKey) { document.getElementById('spaceGenError').textContent = 'No Gemini API key set. Add it in Settings first.'; return; }
+
+    document.getElementById('spaceGenBtn').style.display = 'none';
+    document.getElementById('spaceGenLoading').style.display = 'flex';
+    document.getElementById('spaceGenError').textContent = '';
+    document.getElementById('spaceGenPreview').style.display = 'none';
+
+    spaceGenController = new AbortController();
+
+    try {
+        const response = await fetch(
+            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=' + apiKey,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                signal: spaceGenController.signal,
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{ text: 'Generate a high quality, photorealistic 2K resolution image: ' + prompt }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ['TEXT', 'IMAGE'],
+                        imageSizeOptions: { width: 2048, height: 2048 }
+                    }
+                })
+            }
+        );
+
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error?.message || 'API error: ' + response.status);
+        }
+
+        const data = await response.json();
+
+        // Find the image part in the response
+        let imageData = null;
+        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            for (const part of data.candidates[0].content.parts) {
+                if (part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')) {
+                    imageData = part.inlineData;
+                    break;
+                }
+            }
+        }
+
+        if (!imageData) throw new Error('No image was generated. Try a different prompt.');
+
+        spaceGeneratedImageData = imageData;
+        document.getElementById('spaceGenPreviewImg').src = 'data:' + imageData.mimeType + ';base64,' + imageData.data;
+        document.getElementById('spaceGenPreview').style.display = 'block';
+        document.getElementById('spaceGenLoading').style.display = 'none';
+
+    } catch (err) {
+        document.getElementById('spaceGenLoading').style.display = 'none';
+        if (err.name === 'AbortError') {
+            document.getElementById('spaceGenBtn').style.display = 'block';
+            return;
+        }
+        document.getElementById('spaceGenError').textContent = err.message;
+        document.getElementById('spaceGenBtn').style.display = 'block';
+    }
+    spaceGenController = null;
+}
+
+function spaceCancelGenerate() {
+    if (spaceGenController) { spaceGenController.abort(); spaceGenController = null; }
+    document.getElementById('spaceGenLoading').style.display = 'none';
+    document.getElementById('spaceGenBtn').style.display = 'block';
+}
+
+function spaceDiscardGenerated() {
+    spaceGeneratedImageData = null;
+    document.getElementById('spaceGenPreview').style.display = 'none';
+    document.getElementById('spaceGenBtn').style.display = 'block';
+}
+
+async function spaceSaveGenerated() {
+    if (!spaceGeneratedImageData) return;
+
+    document.getElementById('spaceGenPreview').style.display = 'none';
+    document.getElementById('spaceGenLoading').style.display = 'flex';
+    document.querySelector('#spaceGenLoading p').textContent = 'Saving to album...';
+
+    try {
+        // Convert base64 to blob
+        const byteChars = atob(spaceGeneratedImageData.data);
+        const byteArray = new Uint8Array(byteChars.length);
+        for (let i = 0; i < byteChars.length; i++) byteArray[i] = byteChars.charCodeAt(i);
+        const blob = new Blob([byteArray], { type: spaceGeneratedImageData.mimeType });
+
+        const photoId = 'gen_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        const ref = storage.ref('space/' + photoId);
+        await ref.put(blob);
+        const url = await ref.getDownloadURL();
+
+        const prompt = document.getElementById('spaceGenPrompt').value.trim();
+        await db.collection('spacePhotos').add({
+            url, albumId: currentAlbumId,
+            caption: prompt, source: 'generated',
+            authorId: currentUser.uid, authorName: currentUserName,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        spaceGeneratedImageData = null;
+        document.getElementById('spaceGenerateModal').classList.remove('visible');
+        document.getElementById('spaceGenLoading').style.display = 'none';
+        document.querySelector('#spaceGenLoading p').textContent = 'Creating your image...';
+    } catch (err) {
+        document.getElementById('spaceGenLoading').style.display = 'none';
+        document.getElementById('spaceGenError').textContent = 'Save failed: ' + err.message;
+        document.getElementById('spaceGenPreview').style.display = 'block';
+        document.querySelector('#spaceGenLoading p').textContent = 'Creating your image...';
+    }
 }
 
 // ═══════ PERSISTENT MINI PLAYER ═══════

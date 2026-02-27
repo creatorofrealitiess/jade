@@ -97,7 +97,7 @@
                     <a class="feature-card" data-page="world"><span class="feature-card-icon">&#127807;</span><div class="feature-card-title">The World</div><div class="feature-card-desc">Build &amp; explore Jade&rsquo;s landscape and lore</div></a>
                     <a class="feature-card" data-page="personas" data-accent="rose"><span class="feature-card-icon">&#129695;</span><div class="feature-card-title">Personas</div><div class="feature-card-desc">Who we are in Jade</div></a>
                     <a class="feature-card" data-page="connections" data-accent="lavender"><span class="feature-card-icon">&#128154;</span><div class="feature-card-title">Connections</div><div class="feature-card-desc">Love interests &amp; friends</div></a>
-                    <a class="feature-card" data-page="space" data-accent="honey"><span class="feature-card-icon">&#127969;</span><div class="feature-card-title">Our Space</div><div class="feature-card-desc">Us, pets, home &amp; the world</div></a>
+                    <a class="feature-card" data-page="space" data-accent="honey"><span class="feature-card-icon">&#127969;</span><div class="feature-card-title">Our Space</div><div class="feature-card-desc">Photo albums of life in Jade</div></a>
                     <a class="feature-card" data-page="journal"><span class="feature-card-icon">&#128214;</span><div class="feature-card-title">Journal</div><div class="feature-card-desc">Channel entries from within Jade</div></a>
                     <a class="feature-card" data-page="messenger" data-accent="sky"><span class="feature-card-icon">&#128172;</span><div class="feature-card-title">Messenger</div><div class="feature-card-desc">Talk as your Jade selves</div></a>
                     <a class="feature-card" data-page="gallery" data-accent="honey"><span class="feature-card-icon">&#127912;</span><div class="feature-card-title">Scene Builder</div><div class="feature-card-desc">Create memories &amp; vignettes</div></a>
@@ -109,8 +109,85 @@
 
             <!-- WORLD -->
             <div class="page" id="page-world">
-                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>The World of Jade</h2></div>
-                <div class="placeholder-content"><div class="placeholder-icon">&#127807;</div><h3>Your English Countryside</h3><p>This is where you&rsquo;ll build the world &mdash; the rolling hills, the village, the magic woven into everyday life.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+                <div class="section-header">
+                    <button class="back-btn" onclick="worldBack()">&larr;</button>
+                    <h2 id="worldTitle">The World</h2>
+                    <button class="section-action-btn" id="worldNewBtn" onclick="worldNew()">+</button>
+                </div>
+
+                <!-- FILTER TABS -->
+                <div class="connections-filters" id="worldFilters">
+                    <button class="connections-filter active" data-filter="all" onclick="filterWorld('all')">All</button>
+                    <button class="connections-filter" data-filter="home" onclick="filterWorld('home')">Home</button>
+                    <button class="connections-filter" data-filter="village" onclick="filterWorld('village')">Village</button>
+                    <button class="connections-filter" data-filter="nature" onclick="filterWorld('nature')">Nature</button>
+                    <button class="connections-filter" data-filter="landmark" onclick="filterWorld('landmark')">Landmark</button>
+                    <button class="connections-filter" data-filter="shop" onclick="filterWorld('shop')">Shop</button>
+                    <button class="connections-filter" data-filter="secret" onclick="filterWorld('secret')">Secret</button>
+                </div>
+
+                <div id="worldList" class="personas-list"></div>
+
+                <div id="worldDetail" class="persona-detail" style="display:none">
+                    <div class="world-detail-hero">
+                        <div class="world-detail-photo" id="worldDetailPhoto">
+                            <img id="worldDetailPhotoImg" src="" style="display:none">
+                            <div class="world-detail-photo-placeholder" id="worldDetailPhotoPlaceholder">
+                                <span id="worldDetailPhotoIcon">&#127807;</span>
+                            </div>
+                        </div>
+                        <h2 class="persona-detail-name" id="worldDetailName"></h2>
+                        <div id="worldDetailTag" class="connection-tag" style="display:none"></div>
+                        <div class="persona-detail-actions">
+                            <button class="btn-secondary btn-sm" onclick="worldEdit()">Edit</button>
+                            <button class="btn-danger btn-sm" onclick="worldDelete()">Delete</button>
+                        </div>
+                    </div>
+                    <div id="worldDetailFields" class="persona-detail-fields"></div>
+                </div>
+
+                <div id="worldEditor" class="persona-editor" style="display:none">
+                    <div class="world-editor-photo-row">
+                        <div class="world-editor-photo" id="worldEditorPhoto">
+                            <img id="worldEditorPhotoImg" src="" style="display:none">
+                            <span id="worldEditorPhotoIcon">&#127807;</span>
+                        </div>
+                        <div>
+                            <label class="btn-secondary btn-sm" for="worldPhotoUpload">Upload Photo</label>
+                            <input type="file" id="worldPhotoUpload" accept="image/*" style="display:none">
+                            <div class="anchor-card-meta" style="margin-top:4px">A place in Jade</div>
+                        </div>
+                    </div>
+                    <input class="auth-input persona-field-input" id="worldEdName" placeholder="Name of this place">
+                    <div class="connection-type-picker">
+                        <span class="connection-type-label">What kind of place?</span>
+                        <div class="connection-type-options" id="worldTypeOptions">
+                            <button class="connection-type-btn" data-type="home" onclick="pickWorldType('home')">&#127968; Home</button>
+                            <button class="connection-type-btn" data-type="village" onclick="pickWorldType('village')">&#127960;&#65039; Village</button>
+                            <button class="connection-type-btn" data-type="nature" onclick="pickWorldType('nature')">&#127795; Nature</button>
+                            <button class="connection-type-btn" data-type="landmark" onclick="pickWorldType('landmark')">&#128204; Landmark</button>
+                            <button class="connection-type-btn" data-type="shop" onclick="pickWorldType('shop')">&#128722; Shop</button>
+                            <button class="connection-type-btn" data-type="secret" onclick="pickWorldType('secret')">&#10024; Secret</button>
+                        </div>
+                    </div>
+                    <textarea class="auth-input persona-field-input" id="worldEdDescription" placeholder="Describe this place &mdash; what does it look like? What&rsquo;s the feel?" rows="4"></textarea>
+                    <textarea class="auth-input persona-field-input" id="worldEdAtmosphere" placeholder="Atmosphere &mdash; the light, the sounds, the mood when you&rsquo;re here" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="worldEdSensory" placeholder="Sensory details &mdash; what do you smell, taste, feel on your skin?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="worldEdMemories" placeholder="Memories &mdash; what has happened here? What moments live in this place?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="worldEdSeasons" placeholder="Seasons &mdash; how does this place change through the year?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="worldEdLore" placeholder="Lore &mdash; any history, legends, or secrets about this place?" rows="3"></textarea>
+                    <div class="persona-extras-section">
+                        <div class="persona-extras-header">
+                            <span class="anchor-card-title" style="font-size:16px">Extras</span>
+                            <button class="btn-secondary btn-sm" onclick="worldAddExtra()">+ Field</button>
+                        </div>
+                        <div id="worldExtras" class="persona-extras-list"></div>
+                    </div>
+                    <div class="journal-editor-actions">
+                        <button class="btn-secondary" onclick="worldCancelEdit()">Cancel</button>
+                        <button class="btn-primary btn-sm" onclick="worldSave()">Save Place</button>
+                    </div>
+                </div>
             </div>
 
             <!-- PERSONAS -->
@@ -191,6 +268,7 @@
                     <button class="connections-filter" data-filter="love interest" onclick="filterConnections('love interest')">Love Interest</button>
                     <button class="connections-filter" data-filter="friends" onclick="filterConnections('friends')">Friends</button>
                     <button class="connections-filter" data-filter="kin" onclick="filterConnections('kin')">Kin</button>
+                    <button class="connections-filter" data-filter="pets" onclick="filterConnections('pets')">Pets</button>
                 </div>
 
                 <!-- LIST VIEW -->
@@ -234,6 +312,7 @@
                             <button class="connection-type-btn" data-type="love interest" onclick="pickConnectionType('love interest')">Love Interest</button>
                             <button class="connection-type-btn" data-type="friends" onclick="pickConnectionType('friends')">Friends</button>
                             <button class="connection-type-btn" data-type="kin" onclick="pickConnectionType('kin')">Kin</button>
+                            <button class="connection-type-btn" data-type="pets" onclick="pickConnectionType('pets')">Pets</button>
                         </div>
                     </div>
                     <textarea class="auth-input persona-field-input" id="connectionEdRelationship" placeholder="Relationship &mdash; who are they to you? How does it feel?" rows="3"></textarea>
@@ -260,8 +339,112 @@
 
             <!-- OUR SPACE -->
             <div class="page" id="page-space">
-                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Our Space</h2></div>
-                <div class="placeholder-content"><div class="placeholder-icon">&#127969;</div><h3>Us, Pets, Home &amp; the World</h3><p>Photos of yourselves, your pets, your cottage, and the world around you &mdash; with Nano Banana Pro generation built right in.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+                <div class="section-header">
+                    <button class="back-btn" onclick="spaceBack()">&larr;</button>
+                    <h2 id="spaceTitle">Our Space</h2>
+                    <button class="section-action-btn" id="spaceAddAlbumBtn" onclick="spaceNewAlbum()" title="New album">+</button>
+                </div>
+
+                <!-- ALBUMS VIEW -->
+                <div id="spaceAlbums" class="space-albums-grid"></div>
+
+                <!-- ALBUM DETAIL VIEW (photo grid inside an album) -->
+                <div id="spaceAlbumView" style="display:none">
+                    <div class="space-album-header">
+                        <div class="space-album-header-info">
+                            <span class="space-album-count" id="spaceAlbumCount">0 photos</span>
+                        </div>
+                        <div class="space-album-actions">
+                            <label class="btn-secondary btn-sm" for="spacePhotoUpload">&#128247; Upload</label>
+                            <input type="file" id="spacePhotoUpload" accept="image/*" multiple style="display:none">
+                            <button class="btn-primary btn-sm" onclick="spaceOpenGenerate()">&#10024; Generate</button>
+                        </div>
+                    </div>
+                    <div id="spacePhotoGrid" class="space-photo-grid"></div>
+                </div>
+
+                <!-- PHOTO DETAIL VIEW -->
+                <div id="spacePhotoDetail" style="display:none">
+                    <div class="space-photo-detail">
+                        <img id="spacePhotoDetailImg" src="">
+                        <div class="space-photo-detail-caption" id="spacePhotoDetailCaption"></div>
+                        <div class="space-photo-detail-meta" id="spacePhotoDetailMeta"></div>
+                        <div class="space-photo-detail-actions">
+                            <button class="btn-secondary btn-sm" onclick="spaceEditCaption()">Edit Caption</button>
+                            <button class="btn-secondary btn-sm" onclick="spaceMovePhoto()">Move to Album</button>
+                            <button class="btn-danger btn-sm" onclick="spaceDeletePhoto()">Delete</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GENERATE MODAL -->
+                <div class="modal-overlay" id="spaceGenerateModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Generate Image</h3>
+                            <button class="modal-close" onclick="spaceCloseGenerate()">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="modal-description">Describe what you want to see. Nano Banana Pro will create it at 2K resolution (~$0.13 per image).</p>
+                            <textarea class="auth-input" id="spaceGenPrompt" placeholder="A golden retriever sleeping by the stone fireplace in our Jade cottage, warm afternoon light through the window..." rows="4" style="width:100%;resize:none"></textarea>
+                            <div id="spaceGenPreview" class="space-gen-preview" style="display:none">
+                                <img id="spaceGenPreviewImg" src="">
+                                <div class="space-gen-preview-actions">
+                                    <button class="btn-secondary" onclick="spaceDiscardGenerated()">Discard</button>
+                                    <button class="btn-primary btn-sm" onclick="spaceSaveGenerated()">Save to Album</button>
+                                </div>
+                            </div>
+                            <div id="spaceGenLoading" class="space-gen-loading" style="display:none">
+                                <div class="space-gen-spinner"></div>
+                                <p>Creating your image...</p>
+                                <button class="btn-secondary btn-sm" onclick="spaceCancelGenerate()">Cancel</button>
+                            </div>
+                            <div id="spaceGenError" class="auth-error" style="margin-top:var(--space-sm)"></div>
+                            <button class="btn-primary btn-sm" id="spaceGenBtn" onclick="spaceGenerate()" style="margin-top:var(--space-md);width:100%">&#10024; Generate</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MOVE TO ALBUM MODAL -->
+                <div class="modal-overlay" id="spaceMoveModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Move to Album</h3>
+                            <button class="modal-close" onclick="document.getElementById('spaceMoveModal').classList.remove('visible')">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <div id="spaceMoveAlbumList" class="space-move-list"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NEW ALBUM MODAL -->
+                <div class="modal-overlay" id="spaceNewAlbumModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>New Album</h3>
+                            <button class="modal-close" onclick="document.getElementById('spaceNewAlbumModal').classList.remove('visible')">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <input class="auth-input" id="spaceNewAlbumName" placeholder="Album name..." style="width:100%;margin-bottom:var(--space-md)">
+                            <button class="btn-primary btn-sm" onclick="spaceCreateAlbum()" style="width:100%">Create Album</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EDIT CAPTION MODAL -->
+                <div class="modal-overlay" id="spaceEditCaptionModal">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3>Edit Caption</h3>
+                            <button class="modal-close" onclick="document.getElementById('spaceEditCaptionModal').classList.remove('visible')">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <textarea class="auth-input" id="spaceEditCaptionInput" placeholder="Caption this moment..." rows="3" style="width:100%;resize:none"></textarea>
+                            <button class="btn-primary btn-sm" onclick="spaceSaveCaption()" style="width:100%;margin-top:var(--space-md)">Save</button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- JOURNAL -->
