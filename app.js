@@ -2463,8 +2463,144 @@ function escapeHtml(str) {
     return div.innerHTML;
 }
 
-// ═══════ SERVICE WORKER & PWA ═══════
+// ═══════ SERVICE WORKER & PUSH NOTIFICATIONS ═══════
 
-if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(() => {}); }
+const VAPID_KEY = 'BKvcjmwSamrfYoF7RVjsN2OYy6fHq2Uh6014Miwf4hOns3jldzzRuQM-yxqoBR8MCKTdZyztkxH2kNOUcsEdipQ';
+
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('SW registered');
+        // Check if already subscribed
+        if (currentUser) initPushNotifications(reg);
+    }).catch(err => console.log('SW error:', err));
+}
+
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
+
+async function initPushNotifications(reg) {
+    if (!('Notification' in window) || !('PushManager' in window)) {
+        console.log('Push not supported');
+        updateNotifUI('unsupported');
+        return;
+    }
+
+    const permission = Notification.permission;
+    updateNotifUI(permission);
+
+    if (permission === 'granted') {
+        await saveToken(reg);
+    }
+}
+
+async function requestNotificationPermission() {
+    const btn = document.getElementById('notifEnableBtn');
+    btn.textContent = 'Enabling...';
+    btn.disabled = true;
+
+    try {
+        const permission = await Notification.requestPermission();
+        updateNotifUI(permission);
+
+        if (permission === 'granted') {
+            const reg = await navigator.serviceWorker.ready;
+            await saveToken(reg);
+        }
+    } catch (err) {
+        console.error('Notification permission error:', err);
+        btn.textContent = 'Error — try again';
+        btn.disabled = false;
+    }
+}
+
+async function saveToken(reg) {
+    try {
+        const fbMessaging = firebase.messaging();
+        const token = await fbMessaging.getToken({
+            vapidKey: VAPID_KEY,
+            serviceWorkerRegistration: reg
+        });
+
+        if (token) {
+            console.log('FCM Token obtained');
+            // Save token to Firestore with default preferences
+            await db.collection('fcmTokens').doc(token).set({
+                token: token,
+                userId: currentUser.uid,
+                userName: currentUserName,
+                affirmations: true,
+                journalReminder: true,
+                messages: true,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            // Load current preferences into UI
+            const tokenDoc = await db.collection('fcmTokens').doc(token).get();
+            if (tokenDoc.exists) {
+                const data = tokenDoc.data();
+                document.getElementById('notifAffirmations').checked = data.affirmations !== false;
+                document.getElementById('notifJournal').checked = data.journalReminder !== false;
+                document.getElementById('notifMessages').checked = data.messages !== false;
+            }
+
+            // Store token locally so we can update preferences
+            localStorage.setItem('jade_fcm_token', token);
+        }
+    } catch (err) {
+        console.error('Token error:', err);
+    }
+}
+
+function updateNotifUI(status) {
+    const btn = document.getElementById('notifEnableBtn');
+    const prefs = document.getElementById('notifPreferences');
+    const statusEl = document.getElementById('notifStatus');
+
+    if (status === 'granted') {
+        btn.style.display = 'none';
+        prefs.style.display = 'block';
+        statusEl.textContent = 'Notifications enabled ✓';
+        statusEl.style.color = 'var(--jade-primary)';
+    } else if (status === 'denied') {
+        btn.style.display = 'none';
+        prefs.style.display = 'none';
+        statusEl.textContent = 'Notifications blocked — enable in your browser/phone settings';
+        statusEl.style.color = 'var(--rose)';
+    } else if (status === 'unsupported') {
+        btn.style.display = 'none';
+        prefs.style.display = 'none';
+        statusEl.textContent = 'Push notifications are not supported on this device';
+        statusEl.style.color = 'var(--text-muted)';
+    } else {
+        btn.style.display = 'inline-block';
+        btn.textContent = 'Enable Notifications';
+        btn.disabled = false;
+        prefs.style.display = 'none';
+        statusEl.textContent = '';
+    }
+}
+
+async function updateNotifPreference(key, value) {
+    const token = localStorage.getItem('jade_fcm_token');
+    if (!token) return;
+    
+    try {
+        await db.collection('fcmTokens').doc(token).update({
+            [key]: value,
+            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (err) {
+        console.error('Failed to update preference:', err);
+    }
+}
+
+// Re-init push when user signs in
+const originalOnAuth = auth.onAuthStateChanged;
+auth.onAuthStateChanged(async (user) => {
+    // This runs after the main onAuthStateChanged in the auth section
+    if (user && navigator.serviceWorker) {
+        const reg = await navigator.serviceWorker.ready;
+        initPushNotifications(reg);
+    }
+});
+

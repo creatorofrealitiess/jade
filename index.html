@@ -16,6 +16,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-messaging-compat.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -659,6 +660,27 @@ You are already there."></textarea>
                     <p style="font-size:13px;color:var(--jade-medium);margin-bottom:var(--space-md);line-height:1.5">For Nano Banana Pro image generation. Stored only in your browser.</p>
                     <input class="auth-input" type="password" id="geminiApiKey" placeholder="Paste your Gemini API key" style="width:100%;margin-bottom:var(--space-sm)">
                     <button class="btn-secondary" onclick="saveGeminiKey()">Save Key</button>
+                </div>
+
+                <div class="settings-section">
+                    <h3>Notifications</h3>
+                    <p style="font-size:13px;color:var(--jade-medium);margin-bottom:var(--space-md);line-height:1.5">Receive gentle reminders and alerts from Jade.</p>
+                    <p id="notifStatus" style="font-size:13px;margin-bottom:var(--space-md)"></p>
+                    <button class="btn-primary" id="notifEnableBtn" onclick="requestNotificationPermission()" style="margin-bottom:var(--space-md)">Enable Notifications</button>
+                    <div id="notifPreferences" style="display:none">
+                        <label class="notif-pref-row">
+                            <span class="notif-pref-label">✨ Random affirmations</span>
+                            <input type="checkbox" id="notifAffirmations" checked onchange="updateNotifPreference('affirmations', this.checked)">
+                        </label>
+                        <label class="notif-pref-row">
+                            <span class="notif-pref-label">📖 Daily journal reminder</span>
+                            <input type="checkbox" id="notifJournal" checked onchange="updateNotifPreference('journalReminder', this.checked)">
+                        </label>
+                        <label class="notif-pref-row">
+                            <span class="notif-pref-label">💬 New messages</span>
+                            <input type="checkbox" id="notifMessages" checked onchange="updateNotifPreference('messages', this.checked)">
+                        </label>
+                    </div>
                 </div>
             </div>
         </main>

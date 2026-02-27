@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jade-v2';
+const CACHE_NAME = 'jade-v3';
 const ASSETS = [
     './',
     './index.html',
@@ -39,5 +39,53 @@ self.addEventListener('fetch', event => {
                 return response;
             })
             .catch(() => caches.match(event.request))
+    );
+});
+
+// ═══════ PUSH NOTIFICATIONS ═══════
+
+self.addEventListener('push', event => {
+    let data = { title: 'Jade', body: 'You are here now' };
+    
+    if (event.data) {
+        try {
+            const payload = event.data.json();
+            if (payload.notification) {
+                data = payload.notification;
+            }
+        } catch (e) {
+            data.body = event.data.text();
+        }
+    }
+
+    const options = {
+        body: data.body,
+        icon: './icons/icon-192.png',
+        badge: './icons/icon-192.png',
+        vibrate: [100, 50, 100],
+        data: data.data || {},
+        actions: []
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(data.title, options)
+    );
+});
+
+// Open app when notification is tapped
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            // If app is already open, focus it
+            for (const client of clientList) {
+                if (client.url.includes('jade') && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // Otherwise open it
+            return clients.openWindow('./');
+        })
     );
 });
