@@ -228,6 +228,7 @@
                         <div>
                             <label class="btn-secondary btn-sm" for="personaPhotoUpload">Upload Photo</label>
                             <input type="file" id="personaPhotoUpload" accept="image/*" style="display:none">
+                            <div class="anchor-card-meta" style="margin-top:4px">Your Jade self</div>
                         </div>
                     </div>
                     <input class="auth-input persona-field-input" id="personaEdName" placeholder="Name in Jade">
@@ -479,16 +480,103 @@ You are already there."></textarea>
                 </div>
             </div>
 
-            <!-- GALLERY -->
+            <!-- SCENE BUILDER -->
             <div class="page" id="page-gallery">
-                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Scene Builder</h2></div>
-                <div class="placeholder-content"><div class="placeholder-icon">&#127912;</div><h3>Create Memories</h3><p>Combine images and words to build moments from Jade &mdash; a scrapbook of your life there.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+                <div class="section-header">
+                    <button class="back-btn" onclick="sceneBack()">&larr;</button>
+                    <h2 id="sceneTitle">Scene Builder</h2>
+                    <button class="section-action-btn" id="sceneNewBtn" onclick="sceneNew()">+</button>
+                </div>
+
+                <!-- LIST VIEW -->
+                <div id="sceneList" class="scene-list"></div>
+
+                <!-- DETAIL VIEW -->
+                <div id="sceneDetail" class="scene-detail" style="display:none">
+                    <div class="scene-detail-image" id="sceneDetailImage" style="display:none">
+                        <img id="sceneDetailImg" src="">
+                    </div>
+                    <div class="scene-detail-body">
+                        <div class="scene-detail-mood" id="sceneDetailMood"></div>
+                        <h2 class="scene-detail-title" id="sceneDetailTitle"></h2>
+                        <div class="scene-detail-text" id="sceneDetailText"></div>
+                        <div class="scene-detail-meta" id="sceneDetailMeta"></div>
+                        <div class="scene-detail-actions">
+                            <button class="btn-secondary btn-sm" onclick="sceneEdit()">Edit</button>
+                            <button class="btn-danger btn-sm" onclick="sceneDelete()">Delete</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- EDITOR -->
+                <div id="sceneEditor" class="scene-editor" style="display:none">
+                    <div class="scene-editor-image-area">
+                        <div class="scene-editor-image-preview" id="sceneEditorPreview">
+                            <img id="sceneEditorPreviewImg" src="" style="display:none">
+                            <div class="scene-editor-image-placeholder" id="sceneEditorPlaceholder">
+                                <span>&#127912;</span>
+                                <p>Add an image</p>
+                            </div>
+                        </div>
+                        <div class="scene-editor-image-actions">
+                            <label class="btn-secondary btn-sm" for="sceneImageUpload">Upload Photo</label>
+                            <input type="file" id="sceneImageUpload" accept="image/*" style="display:none">
+                            <button class="btn-secondary btn-sm" id="sceneRemoveImageBtn" onclick="sceneRemoveImage()" style="display:none">Remove</button>
+                        </div>
+                    </div>
+                    <input class="journal-editor-title" id="sceneEdTitle" placeholder="Title this moment...">
+                    <textarea class="journal-editor-body" id="sceneEdBody" placeholder="Describe the scene. What are you doing? What does the air feel like? You are there." rows="6"></textarea>
+                    <div class="scene-mood-picker">
+                        <span class="scene-mood-label">Mood</span>
+                        <div class="scene-mood-options" id="sceneMoodOptions">
+                            <button class="scene-mood-btn" data-mood="serene" onclick="pickSceneMood('serene')">&#127807; Serene</button>
+                            <button class="scene-mood-btn" data-mood="golden" onclick="pickSceneMood('golden')">&#9728;&#65039; Golden</button>
+                            <button class="scene-mood-btn" data-mood="cosy" onclick="pickSceneMood('cosy')">&#128367;&#65039; Cosy</button>
+                            <button class="scene-mood-btn" data-mood="romantic" onclick="pickSceneMood('romantic')">&#127801; Romantic</button>
+                            <button class="scene-mood-btn" data-mood="adventure" onclick="pickSceneMood('adventure')">&#10024; Adventure</button>
+                            <button class="scene-mood-btn" data-mood="misty" onclick="pickSceneMood('misty')">&#127787;&#65039; Misty</button>
+                        </div>
+                    </div>
+                    <div class="journal-editor-actions">
+                        <button class="btn-secondary" onclick="sceneCancelEdit()">Cancel</button>
+                        <button class="btn-primary btn-sm" onclick="sceneSave()">Save Scene</button>
+                    </div>
+                </div>
             </div>
 
             <!-- TIMELINE -->
             <div class="page" id="page-timeline">
-                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Timeline</h2></div>
-                <div class="placeholder-content"><div class="placeholder-icon">&#10024;</div><h3>The Story So Far</h3><p>A living chronology of your life in Jade &mdash; every moment building on the last.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+                <div class="section-header">
+                    <button class="back-btn" onclick="timelineBack()">&larr;</button>
+                    <h2 id="timelineTitle">Timeline</h2>
+                    <button class="section-action-btn" id="timelineNewBtn" onclick="timelineNew()">+</button>
+                </div>
+
+                <!-- LIST VIEW -->
+                <div id="timelineList" class="timeline-list"></div>
+
+                <!-- EDITOR -->
+                <div id="timelineEditor" class="timeline-editor" style="display:none">
+                    <input class="auth-input" type="date" id="timelineEdDate" style="width:100%;color-scheme:dark">
+                    <input class="journal-editor-title" id="timelineEdTitle" placeholder="What happened?">
+                    <textarea class="journal-editor-body" id="timelineEdBody" placeholder="Describe this moment in your life in Jade. Be there as you write it." rows="5"></textarea>
+                    <div class="scene-mood-picker">
+                        <span class="scene-mood-label">Category</span>
+                        <div class="scene-mood-options" id="timelineCatOptions">
+                            <button class="scene-mood-btn" data-mood="milestone" onclick="pickTimelineCat('milestone')">&#10024; Milestone</button>
+                            <button class="scene-mood-btn" data-mood="everyday" onclick="pickTimelineCat('everyday')">&#127807; Everyday</button>
+                            <button class="scene-mood-btn" data-mood="love" onclick="pickTimelineCat('love')">&#128154; Love</button>
+                            <button class="scene-mood-btn" data-mood="adventure" onclick="pickTimelineCat('adventure')">&#127758; Adventure</button>
+                            <button class="scene-mood-btn" data-mood="home" onclick="pickTimelineCat('home')">&#127968; Home</button>
+                            <button class="scene-mood-btn" data-mood="memory" onclick="pickTimelineCat('memory')">&#128338; Memory</button>
+                        </div>
+                    </div>
+                    <div class="journal-editor-actions">
+                        <button class="btn-secondary" onclick="timelineCancelEdit()">Cancel</button>
+                        <button class="btn-primary btn-sm" id="timelineDeleteBtn" onclick="timelineDelete()" style="display:none;background:var(--rose);">Delete</button>
+                        <button class="btn-primary btn-sm" onclick="timelineSave()">Save Moment</button>
+                    </div>
+                </div>
             </div>
 
             <!-- ANCHORS -->

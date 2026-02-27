@@ -113,6 +113,8 @@ auth.onAuthStateChanged(async (user) => {
         initConnections();
         initWorld();
         initSpace();
+        initScenes();
+        initTimeline();
     } else {
         currentUser = null;
         document.getElementById('authScreen').style.display = 'flex';
@@ -212,6 +214,8 @@ function nav(pageId) {
     if (pageId === 'connections') connectionsShowList();
     if (pageId === 'world') worldShowList();
     if (pageId === 'space') spaceShowAlbums();
+    if (pageId === 'gallery') sceneShowList();
+    if (pageId === 'timeline') timelineShowList();
 }
 
 document.querySelectorAll('.feature-card[data-page]').forEach(c => c.addEventListener('click', () => nav(c.dataset.page)));
@@ -2009,6 +2013,388 @@ async function spaceSaveGenerated() {
         document.getElementById('spaceGenPreview').style.display = 'block';
         document.querySelector('#spaceGenLoading p').textContent = 'Creating your image...';
     }
+}
+
+// ═══════ SCENE BUILDER (Firestore synced) ═══════
+
+let scenesData = [];
+let scenesUnsub = null;
+let editingSceneId = null;
+let scenePhotoFile = null;
+let scenePhotoPreview = '';
+let sceneSelectedMood = '';
+
+function initScenes() {
+    if (scenesUnsub) scenesUnsub();
+    scenesUnsub = db.collection('scenes').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        scenesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderSceneList();
+    });
+}
+
+function renderSceneList() {
+    const container = document.getElementById('sceneList');
+    if (scenesData.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#127912;</div><p>No scenes yet. Tap + to capture your first moment from Jade.</p></div>';
+        return;
+    }
+    container.innerHTML = scenesData.map(s => {
+        const date = s.createdAt ? new Date(s.createdAt.seconds * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Just now';
+        const moodLabel = s.mood ? moodMap[s.mood] || '' : '';
+        return '<div class="scene-card" onclick="sceneOpen(\'' + s.id + '\')">' +
+            (s.imageUrl ? '<div class="scene-card-image"><img src="' + s.imageUrl + '" alt="" loading="lazy"></div>' : '') +
+            '<div class="scene-card-body">' +
+                (moodLabel ? '<div class="scene-card-mood" data-mood="' + escapeHtml(s.mood) + '">' + moodLabel + '</div>' : '') +
+                '<div class="scene-card-title">' + escapeHtml(s.title || 'Untitled') + '</div>' +
+                (s.body ? '<div class="scene-card-preview">' + escapeHtml(s.body) + '</div>' : '') +
+                '<div class="scene-card-meta">' + date + ' \u2014 ' + escapeHtml(s.authorName || '') + '</div>' +
+            '</div>' +
+        '</div>';
+    }).join('');
+}
+
+const moodMap = {
+    serene: '\u{1F33F} Serene',
+    golden: '\u2600\uFE0F Golden',
+    cosy: '\u{1F56F}\uFE0F Cosy',
+    romantic: '\u{1F339} Romantic',
+    adventure: '\u2728 Adventure',
+    misty: '\u{1F32B}\uFE0F Misty'
+};
+
+function sceneShowList() {
+    document.getElementById('sceneList').style.display = 'flex';
+    document.getElementById('sceneDetail').style.display = 'none';
+    document.getElementById('sceneEditor').style.display = 'none';
+    document.getElementById('sceneNewBtn').style.display = 'flex';
+    document.getElementById('sceneTitle').textContent = 'Scene Builder';
+    editingSceneId = null;
+}
+
+function sceneNew() {
+    editingSceneId = null;
+    scenePhotoFile = null;
+    scenePhotoPreview = '';
+    sceneSelectedMood = '';
+    document.getElementById('sceneEdTitle').value = '';
+    document.getElementById('sceneEdBody').value = '';
+    document.getElementById('sceneEditorPreviewImg').style.display = 'none';
+    document.getElementById('sceneEditorPlaceholder').style.display = 'flex';
+    document.getElementById('sceneRemoveImageBtn').style.display = 'none';
+    document.querySelectorAll('#sceneMoodOptions .scene-mood-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('sceneList').style.display = 'none';
+    document.getElementById('sceneDetail').style.display = 'none';
+    document.getElementById('sceneEditor').style.display = 'block';
+    document.getElementById('sceneNewBtn').style.display = 'none';
+    document.getElementById('sceneTitle').textContent = 'New Scene';
+    document.getElementById('sceneEdTitle').focus();
+}
+
+function sceneOpen(id) {
+    const scene = scenesData.find(s => s.id === id);
+    if (!scene) return;
+    editingSceneId = id;
+
+    if (scene.imageUrl) {
+        document.getElementById('sceneDetailImg').src = scene.imageUrl;
+        document.getElementById('sceneDetailImage').style.display = 'block';
+    } else {
+        document.getElementById('sceneDetailImage').style.display = 'none';
+    }
+
+    const moodLabel = scene.mood ? moodMap[scene.mood] || '' : '';
+    document.getElementById('sceneDetailMood').textContent = moodLabel;
+    document.getElementById('sceneDetailMood').style.display = moodLabel ? 'block' : 'none';
+    document.getElementById('sceneDetailTitle').textContent = scene.title || 'Untitled';
+    document.getElementById('sceneDetailText').textContent = scene.body || '';
+
+    const date = scene.createdAt ? new Date(scene.createdAt.seconds * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+    document.getElementById('sceneDetailMeta').textContent = (date ? date + ' \u2014 ' : '') + (scene.authorName || '');
+
+    document.getElementById('sceneList').style.display = 'none';
+    document.getElementById('sceneDetail').style.display = 'block';
+    document.getElementById('sceneEditor').style.display = 'none';
+    document.getElementById('sceneNewBtn').style.display = 'none';
+    document.getElementById('sceneTitle').textContent = 'Scene';
+}
+
+function sceneEdit() {
+    const scene = scenesData.find(s => s.id === editingSceneId);
+    if (!scene) return;
+
+    document.getElementById('sceneEdTitle').value = scene.title || '';
+    document.getElementById('sceneEdBody').value = scene.body || '';
+    sceneSelectedMood = scene.mood || '';
+    scenePhotoPreview = scene.imageUrl || '';
+    scenePhotoFile = null;
+
+    if (scenePhotoPreview) {
+        document.getElementById('sceneEditorPreviewImg').src = scenePhotoPreview;
+        document.getElementById('sceneEditorPreviewImg').style.display = 'block';
+        document.getElementById('sceneEditorPlaceholder').style.display = 'none';
+        document.getElementById('sceneRemoveImageBtn').style.display = 'inline-block';
+    } else {
+        document.getElementById('sceneEditorPreviewImg').style.display = 'none';
+        document.getElementById('sceneEditorPlaceholder').style.display = 'flex';
+        document.getElementById('sceneRemoveImageBtn').style.display = 'none';
+    }
+
+    document.querySelectorAll('#sceneMoodOptions .scene-mood-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mood === sceneSelectedMood);
+    });
+
+    document.getElementById('sceneDetail').style.display = 'none';
+    document.getElementById('sceneEditor').style.display = 'block';
+    document.getElementById('sceneTitle').textContent = 'Edit Scene';
+}
+
+function sceneBack() {
+    if (document.getElementById('sceneEditor').style.display === 'block') { sceneShowList(); }
+    else if (document.getElementById('sceneDetail').style.display === 'block') { sceneShowList(); }
+    else { nav('home'); }
+}
+
+function sceneCancelEdit() { sceneShowList(); }
+
+function pickSceneMood(mood) {
+    sceneSelectedMood = sceneSelectedMood === mood ? '' : mood;
+    document.querySelectorAll('#sceneMoodOptions .scene-mood-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mood === sceneSelectedMood);
+    });
+}
+
+function sceneRemoveImage() {
+    scenePhotoFile = null;
+    scenePhotoPreview = '';
+    document.getElementById('sceneEditorPreviewImg').style.display = 'none';
+    document.getElementById('sceneEditorPlaceholder').style.display = 'flex';
+    document.getElementById('sceneRemoveImageBtn').style.display = 'none';
+}
+
+document.getElementById('sceneImageUpload').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Please choose an image'); return; }
+    if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB'); return; }
+    scenePhotoFile = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        scenePhotoPreview = ev.target.result;
+        document.getElementById('sceneEditorPreviewImg').src = scenePhotoPreview;
+        document.getElementById('sceneEditorPreviewImg').style.display = 'block';
+        document.getElementById('sceneEditorPlaceholder').style.display = 'none';
+        document.getElementById('sceneRemoveImageBtn').style.display = 'inline-block';
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+});
+
+async function sceneSave() {
+    const title = document.getElementById('sceneEdTitle').value.trim();
+    const body = document.getElementById('sceneEdBody').value.trim();
+    if (!title && !body) return;
+
+    let imageUrl = '';
+
+    // If editing, keep existing image unless changed or removed
+    if (editingSceneId) {
+        const existing = scenesData.find(s => s.id === editingSceneId);
+        imageUrl = existing ? existing.imageUrl || '' : '';
+    }
+
+    // Upload new photo if selected
+    if (scenePhotoFile) {
+        try {
+            const photoId = 'scene_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+            const ref = storage.ref('scenes/' + photoId);
+            await ref.put(scenePhotoFile);
+            imageUrl = await ref.getDownloadURL();
+        } catch (err) {
+            alert('Image upload failed: ' + err.message);
+            return;
+        }
+    } else if (!scenePhotoPreview) {
+        imageUrl = ''; // Image was removed
+    }
+
+    const data = {
+        title, body, imageUrl,
+        mood: sceneSelectedMood,
+        authorId: currentUser.uid,
+        authorName: currentUserName,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (editingSceneId) {
+        await db.collection('scenes').doc(editingSceneId).update(data);
+    } else {
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('scenes').add(data);
+    }
+    sceneShowList();
+}
+
+async function sceneDelete() {
+    if (!editingSceneId) return;
+    if (!confirm('Delete this scene?')) return;
+    await db.collection('scenes').doc(editingSceneId).delete();
+    sceneShowList();
+}
+
+// ═══════ TIMELINE (Firestore synced) ═══════
+
+let timelineData = [];
+let timelineUnsub = null;
+let editingTimelineId = null;
+let timelineSelectedCat = '';
+
+function initTimeline() {
+    if (timelineUnsub) timelineUnsub();
+    timelineUnsub = db.collection('timeline').orderBy('eventDate', 'desc').onSnapshot(snapshot => {
+        timelineData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderTimelineList();
+    });
+}
+
+const catMap = {
+    milestone: '\u2728 Milestone',
+    everyday: '\u{1F33F} Everyday',
+    love: '\u{1F49A} Love',
+    adventure: '\u{1F30E} Adventure',
+    home: '\u{1F3E0} Home',
+    memory: '\u{1F552} Memory'
+};
+
+function renderTimelineList() {
+    const container = document.getElementById('timelineList');
+    if (timelineData.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#10024;</div><p>No moments yet. Tap + to begin the story of your life in Jade.</p></div>';
+        return;
+    }
+
+    let html = '';
+    let lastYear = '';
+
+    timelineData.forEach(t => {
+        const dateStr = t.eventDate || '';
+        const year = dateStr ? dateStr.substring(0, 4) : '';
+        const displayDate = dateStr ? formatTimelineDate(dateStr) : 'Undated';
+        const catLabel = t.category ? catMap[t.category] || '' : '';
+
+        if (year && year !== lastYear) {
+            html += '<div class="timeline-year-marker">' + year + '</div>';
+            lastYear = year;
+        }
+
+        html += '<div class="timeline-card" onclick="timelineOpen(\'' + t.id + '\')">' +
+            '<div class="timeline-card-date">' + displayDate + '</div>' +
+            (catLabel ? '<div class="timeline-card-cat" data-cat="' + escapeHtml(t.category) + '">' + catLabel + '</div>' : '') +
+            '<div class="timeline-card-title">' + escapeHtml(t.title || 'Untitled') + '</div>' +
+            (t.body ? '<div class="timeline-card-preview">' + escapeHtml(t.body) + '</div>' : '') +
+            '<div class="timeline-card-author">\u2014 ' + escapeHtml(t.authorName || '') + '</div>' +
+        '</div>';
+    });
+
+    container.innerHTML = html;
+}
+
+function formatTimelineDate(dateStr) {
+    try {
+        const parts = dateStr.split('-');
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+    } catch (e) {
+        return dateStr;
+    }
+}
+
+function timelineShowList() {
+    document.getElementById('timelineList').style.display = 'block';
+    document.getElementById('timelineEditor').style.display = 'none';
+    document.getElementById('timelineNewBtn').style.display = 'flex';
+    document.getElementById('timelineTitle').textContent = 'Timeline';
+    document.getElementById('timelineDeleteBtn').style.display = 'none';
+    editingTimelineId = null;
+}
+
+function timelineNew() {
+    editingTimelineId = null;
+    timelineSelectedCat = '';
+    document.getElementById('timelineEdDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('timelineEdTitle').value = '';
+    document.getElementById('timelineEdBody').value = '';
+    document.querySelectorAll('#timelineCatOptions .scene-mood-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('timelineList').style.display = 'none';
+    document.getElementById('timelineEditor').style.display = 'block';
+    document.getElementById('timelineNewBtn').style.display = 'none';
+    document.getElementById('timelineTitle').textContent = 'New Moment';
+    document.getElementById('timelineDeleteBtn').style.display = 'none';
+    document.getElementById('timelineEdTitle').focus();
+}
+
+function timelineOpen(id) {
+    const t = timelineData.find(e => e.id === id);
+    if (!t) return;
+    editingTimelineId = id;
+
+    document.getElementById('timelineEdDate').value = t.eventDate || '';
+    document.getElementById('timelineEdTitle').value = t.title || '';
+    document.getElementById('timelineEdBody').value = t.body || '';
+    timelineSelectedCat = t.category || '';
+
+    document.querySelectorAll('#timelineCatOptions .scene-mood-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mood === timelineSelectedCat);
+    });
+
+    document.getElementById('timelineList').style.display = 'none';
+    document.getElementById('timelineEditor').style.display = 'block';
+    document.getElementById('timelineNewBtn').style.display = 'none';
+    document.getElementById('timelineTitle').textContent = 'Edit Moment';
+    document.getElementById('timelineDeleteBtn').style.display = 'inline-block';
+}
+
+function timelineBack() {
+    if (document.getElementById('timelineEditor').style.display === 'block') { timelineShowList(); }
+    else { nav('home'); }
+}
+
+function timelineCancelEdit() { timelineShowList(); }
+
+function pickTimelineCat(cat) {
+    timelineSelectedCat = timelineSelectedCat === cat ? '' : cat;
+    document.querySelectorAll('#timelineCatOptions .scene-mood-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.mood === timelineSelectedCat);
+    });
+}
+
+async function timelineSave() {
+    const title = document.getElementById('timelineEdTitle').value.trim();
+    const body = document.getElementById('timelineEdBody').value.trim();
+    const eventDate = document.getElementById('timelineEdDate').value;
+    if (!title && !body) return;
+
+    const data = {
+        title, body, eventDate,
+        category: timelineSelectedCat,
+        authorId: currentUser.uid,
+        authorName: currentUserName,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (editingTimelineId) {
+        await db.collection('timeline').doc(editingTimelineId).update(data);
+    } else {
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        await db.collection('timeline').add(data);
+    }
+    timelineShowList();
+}
+
+async function timelineDelete() {
+    if (!editingTimelineId) return;
+    if (!confirm('Delete this moment?')) return;
+    await db.collection('timeline').doc(editingTimelineId).delete();
+    timelineShowList();
 }
 
 // ═══════ PERSISTENT MINI PLAYER ═══════
