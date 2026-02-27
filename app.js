@@ -110,6 +110,7 @@ auth.onAuthStateChanged(async (user) => {
         initMessenger();
         initAnchors();
         initPersonas();
+        initConnections();
     } else {
         currentUser = null;
         document.getElementById('authScreen').style.display = 'flex';
@@ -206,6 +207,7 @@ function nav(pageId) {
 
     if (pageId === 'journal') journalShowList();
     if (pageId === 'personas') personasShowList();
+    if (pageId === 'connections') connectionsShowList();
 }
 
 document.querySelectorAll('.feature-card[data-page]').forEach(c => c.addEventListener('click', () => nav(c.dataset.page)));
@@ -837,6 +839,340 @@ async function personaDelete() {
     if (!confirm('Delete this persona?')) return;
     await db.collection('personas').doc(editingPersonaId).delete();
     personasShowList();
+}
+
+// ═══════ CONNECTIONS (Firestore synced) ═══════
+
+let connectionsData = [];
+let connectionsUnsub = null;
+let editingConnectionId = null;
+let connectionEditorExtras = [];
+let connectionPhotoFile = null;
+let connectionPhotoPreview = '';
+let connectionSelectedType = '';
+let connectionsFilter = 'all';
+
+function initConnections() {
+    if (connectionsUnsub) connectionsUnsub();
+    connectionsUnsub = db.collection('connections').orderBy('createdAt', 'asc').onSnapshot(snapshot => {
+        connectionsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderConnectionsList();
+    });
+}
+
+function renderConnectionsList() {
+    const container = document.getElementById('connectionsList');
+    const filtered = connectionsFilter === 'all'
+        ? connectionsData
+        : connectionsData.filter(c => c.type === connectionsFilter);
+
+    if (connectionsData.length === 0) {
+        container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#128154;</div><p>No connections yet. Tap + to add the first soul in your Jade world.</p></div>';
+        return;
+    }
+
+    if (filtered.length === 0) {
+        container.innerHTML = '<div class="empty-state" style="padding:var(--space-xl) 0"><p>No ' + connectionsFilter + 's yet.</p></div>';
+        return;
+    }
+
+    const typeEmojis = { 'love interest': '💜', 'friend': '💛', 'family': '🧑‍🤝‍🧑' };
+
+    container.innerHTML = filtered.map(c => {
+        const avatarHtml = c.photoUrl
+            ? '<img src="' + c.photoUrl + '" alt="">'
+            : '<span>' + (c.name || '?')[0].toUpperCase() + '</span>';
+        const emoji = typeEmojis[c.type] || '💚';
+        return '<div class="persona-card" onclick="connectionOpen(\'' + c.id + '\')">' +
+            '<div class="persona-card-avatar">' + avatarHtml + '</div>' +
+            '<div class="persona-card-info">' +
+                '<div class="persona-card-name">' + escapeHtml(c.name || 'Unnamed') + '</div>' +
+                '<div class="persona-card-age">' + emoji + ' ' + escapeHtml(c.type || '') + (c.age ? ' · ' + escapeHtml(c.age) : '') + '</div>' +
+                (c.relationship ? '<div class="persona-card-preview">' + escapeHtml(c.relationship) + '</div>' : '') +
+            '</div>' +
+            '<div class="persona-card-arrow">&rsaquo;</div>' +
+        '</div>';
+    }).join('');
+}
+
+function filterConnections(type) {
+    connectionsFilter = type;
+    document.querySelectorAll('.connections-filter').forEach(f => f.classList.toggle('active', f.dataset.filter === type));
+    renderConnectionsList();
+}
+
+// ── Views ──
+function connectionsShowList() {
+    document.getElementById('connectionsList').style.display = 'block';
+    document.getElementById('connectionDetail').style.display = 'none';
+    document.getElementById('connectionEditor').style.display = 'none';
+    document.getElementById('connectionsNewBtn').style.display = 'flex';
+    document.getElementById('connectionsFilters').style.display = 'flex';
+    document.getElementById('connectionsTitle').textContent = 'Connections';
+    editingConnectionId = null;
+}
+
+function connectionsBack() {
+    if (document.getElementById('connectionEditor').style.display !== 'none') {
+        connectionCancelEdit();
+    } else if (document.getElementById('connectionDetail').style.display !== 'none') {
+        connectionsShowList();
+    } else {
+        nav('home');
+    }
+}
+
+function connectionOpen(id) {
+    const c = connectionsData.find(x => x.id === id);
+    if (!c) return;
+    editingConnectionId = id;
+
+    const img = document.getElementById('connectionDetailAvatarImg');
+    const initial = document.getElementById('connectionDetailAvatarInitial');
+    if (c.photoUrl) {
+        img.src = c.photoUrl; img.style.display = 'block'; initial.style.display = 'none';
+    } else {
+        img.style.display = 'none'; initial.style.display = 'block';
+        initial.textContent = (c.name || '?')[0].toUpperCase();
+    }
+
+    document.getElementById('connectionDetailName').textContent = c.name || 'Unnamed';
+    document.getElementById('connectionDetailAge').textContent = c.age ? 'Age ' + c.age : '';
+
+    const typeEmojis = { 'love interest': '💜', 'friend': '💛', 'family': '🧑‍🤝‍🧑' };
+    const tagEl = document.getElementById('connectionDetailTag');
+    if (c.type) {
+        tagEl.textContent = (typeEmojis[c.type] || '💚') + ' ' + c.type;
+        tagEl.className = 'connection-tag connection-tag-' + c.type.replace(/\s+/g, '-');
+        tagEl.style.display = 'inline-block';
+    } else {
+        tagEl.style.display = 'none';
+    }
+
+    const fixedFields = [
+        { label: 'Relationship', value: c.relationship },
+        { label: 'Appearance', value: c.appearance },
+        { label: 'Personality', value: c.personality },
+        { label: 'Daily Life', value: c.dailyLife },
+        { label: 'Style', value: c.style },
+        { label: 'Backstory', value: c.backstory }
+    ];
+
+    const extras = c.extras || [];
+    const allFields = [...fixedFields, ...extras.map(e => ({ label: e.label, value: e.value }))];
+
+    document.getElementById('connectionDetailFields').innerHTML = allFields
+        .filter(f => f.value)
+        .map(f =>
+            '<div class="persona-detail-field">' +
+                '<div class="persona-detail-field-label">' + escapeHtml(f.label) + '</div>' +
+                '<div class="persona-detail-field-value">' + escapeHtml(f.value) + '</div>' +
+            '</div>'
+        ).join('');
+
+    document.getElementById('connectionsList').style.display = 'none';
+    document.getElementById('connectionDetail').style.display = 'block';
+    document.getElementById('connectionEditor').style.display = 'none';
+    document.getElementById('connectionsNewBtn').style.display = 'none';
+    document.getElementById('connectionsFilters').style.display = 'none';
+    document.getElementById('connectionsTitle').textContent = c.name || 'Connection';
+}
+
+// ── Editor ──
+function connectionNew() {
+    editingConnectionId = null;
+    connectionPhotoFile = null;
+    connectionPhotoPreview = '';
+    connectionSelectedType = '';
+    clearConnectionEditor();
+    showConnectionEditorAvatar('', '?');
+    updateConnectionTypeBtns();
+    document.getElementById('connectionsList').style.display = 'none';
+    document.getElementById('connectionDetail').style.display = 'none';
+    document.getElementById('connectionEditor').style.display = 'block';
+    document.getElementById('connectionsNewBtn').style.display = 'none';
+    document.getElementById('connectionsFilters').style.display = 'none';
+    document.getElementById('connectionsTitle').textContent = 'New Connection';
+}
+
+function connectionEdit() {
+    const c = connectionsData.find(x => x.id === editingConnectionId);
+    if (!c) return;
+    connectionPhotoFile = null;
+    connectionPhotoPreview = c.photoUrl || '';
+    connectionSelectedType = c.type || '';
+
+    document.getElementById('connectionEdName').value = c.name || '';
+    document.getElementById('connectionEdAge').value = c.age || '';
+    document.getElementById('connectionEdRelationship').value = c.relationship || '';
+    document.getElementById('connectionEdAppearance').value = c.appearance || '';
+    document.getElementById('connectionEdPersonality').value = c.personality || '';
+    document.getElementById('connectionEdDailyLife').value = c.dailyLife || '';
+    document.getElementById('connectionEdStyle').value = c.style || '';
+    document.getElementById('connectionEdBackstory').value = c.backstory || '';
+    connectionEditorExtras = (c.extras || []).map(e => ({ ...e }));
+    renderConnectionExtras();
+    updateConnectionTypeBtns();
+    showConnectionEditorAvatar(c.photoUrl || '', c.name || '?');
+
+    document.getElementById('connectionDetail').style.display = 'none';
+    document.getElementById('connectionEditor').style.display = 'block';
+    document.getElementById('connectionsFilters').style.display = 'none';
+    document.getElementById('connectionsTitle').textContent = 'Edit Connection';
+}
+
+function clearConnectionEditor() {
+    document.getElementById('connectionEdName').value = '';
+    document.getElementById('connectionEdAge').value = '';
+    document.getElementById('connectionEdRelationship').value = '';
+    document.getElementById('connectionEdAppearance').value = '';
+    document.getElementById('connectionEdPersonality').value = '';
+    document.getElementById('connectionEdDailyLife').value = '';
+    document.getElementById('connectionEdStyle').value = '';
+    document.getElementById('connectionEdBackstory').value = '';
+    connectionEditorExtras = [];
+    renderConnectionExtras();
+}
+
+function showConnectionEditorAvatar(url, name) {
+    const img = document.getElementById('connectionEditorAvatarImg');
+    const initial = document.getElementById('connectionEditorAvatarInitial');
+    if (url) {
+        img.src = url; img.style.display = 'block'; initial.style.display = 'none';
+    } else {
+        img.style.display = 'none'; initial.style.display = 'block';
+        initial.textContent = (name || '?')[0].toUpperCase();
+    }
+}
+
+function connectionCancelEdit() {
+    if (editingConnectionId) {
+        connectionOpen(editingConnectionId);
+    } else {
+        connectionsShowList();
+    }
+}
+
+// ── Type Picker ──
+function pickConnectionType(type) {
+    connectionSelectedType = (connectionSelectedType === type) ? '' : type;
+    updateConnectionTypeBtns();
+}
+
+function updateConnectionTypeBtns() {
+    document.querySelectorAll('.connection-type-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.type === connectionSelectedType);
+    });
+}
+
+// ── Extras ──
+function connectionAddExtra() {
+    connectionEditorExtras.push({ label: '', value: '' });
+    renderConnectionExtras();
+    setTimeout(() => {
+        const labels = document.querySelectorAll('#connectionExtras .persona-extra-label');
+        if (labels.length) labels[labels.length - 1].focus();
+    }, 50);
+}
+
+function connectionRemoveExtra(idx) {
+    connectionEditorExtras.splice(idx, 1);
+    renderConnectionExtras();
+}
+
+function renderConnectionExtras() {
+    const container = document.getElementById('connectionExtras');
+    container.innerHTML = connectionEditorExtras.map((e, i) =>
+        '<div class="persona-extra-item">' +
+            '<div class="persona-extra-item-header">' +
+                '<input class="auth-input persona-extra-label" data-idx="' + i + '" placeholder="Field name..." value="' + escapeHtml(e.label) + '">' +
+                '<button class="affirmation-delete-btn" onclick="connectionRemoveExtra(' + i + ')">&times;</button>' +
+            '</div>' +
+            '<textarea class="auth-input persona-extra-value" data-idx="' + i + '" placeholder="Write freely..." rows="2">' + escapeHtml(e.value) + '</textarea>' +
+        '</div>'
+    ).join('');
+
+    container.querySelectorAll('.persona-extra-label').forEach(el => {
+        el.addEventListener('input', () => { connectionEditorExtras[parseInt(el.dataset.idx)].label = el.value; });
+    });
+    container.querySelectorAll('.persona-extra-value').forEach(el => {
+        el.addEventListener('input', () => { connectionEditorExtras[parseInt(el.dataset.idx)].value = el.value; });
+    });
+}
+
+// ── Photo Upload ──
+document.getElementById('connectionPhotoUpload').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('Please choose an image'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+    connectionPhotoFile = file;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        connectionPhotoPreview = ev.target.result;
+        showConnectionEditorAvatar(connectionPhotoPreview, document.getElementById('connectionEdName').value || '?');
+    };
+    reader.readAsDataURL(file);
+});
+
+document.getElementById('connectionEdName').addEventListener('input', (e) => {
+    if (!connectionPhotoPreview) {
+        document.getElementById('connectionEditorAvatarInitial').textContent = (e.target.value || '?')[0].toUpperCase();
+    }
+});
+
+// ── Save & Delete ──
+async function connectionSave() {
+    const name = document.getElementById('connectionEdName').value.trim();
+    if (!name) { alert('Give this connection a name'); return; }
+
+    let photoUrl = connectionPhotoPreview || '';
+
+    if (connectionPhotoFile) {
+        try {
+            const photoId = editingConnectionId || ('conn_' + Date.now());
+            const ref = storage.ref('connections/' + photoId);
+            await ref.put(connectionPhotoFile);
+            photoUrl = await ref.getDownloadURL();
+        } catch (err) {
+            alert('Photo upload failed: ' + err.message);
+            return;
+        }
+    }
+
+    const data = {
+        name,
+        age: document.getElementById('connectionEdAge').value.trim(),
+        type: connectionSelectedType,
+        relationship: document.getElementById('connectionEdRelationship').value.trim(),
+        appearance: document.getElementById('connectionEdAppearance').value.trim(),
+        personality: document.getElementById('connectionEdPersonality').value.trim(),
+        dailyLife: document.getElementById('connectionEdDailyLife').value.trim(),
+        style: document.getElementById('connectionEdStyle').value.trim(),
+        backstory: document.getElementById('connectionEdBackstory').value.trim(),
+        extras: connectionEditorExtras.filter(e => e.label.trim() || e.value.trim()),
+        photoUrl,
+        authorId: currentUser.uid,
+        authorName: currentUserName,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    if (editingConnectionId) {
+        await db.collection('connections').doc(editingConnectionId).update(data);
+        connectionOpen(editingConnectionId);
+    } else {
+        data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        const docRef = await db.collection('connections').add(data);
+        editingConnectionId = docRef.id;
+        connectionOpen(docRef.id);
+    }
+}
+
+async function connectionDelete() {
+    if (!editingConnectionId) return;
+    if (!confirm('Delete this connection?')) return;
+    await db.collection('connections').doc(editingConnectionId).delete();
+    connectionsShowList();
 }
 
 // ═══════ SENSORY ANCHORS (Firestore synced) ═══════

@@ -1192,6 +1192,108 @@ body::after {
     resize: none;
 }
 
+/* ═══════ CONNECTIONS ═══════ */
+.connections-filters {
+    display: flex;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-lg);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+}
+
+.connections-filters::-webkit-scrollbar { display: none; }
+
+.connections-filter {
+    padding: 6px 14px;
+    border-radius: var(--radius-xl);
+    border: var(--border-medium);
+    background: var(--bg-card);
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.connections-filter.active {
+    background: var(--bg-elevated);
+    color: var(--jade-primary);
+    border-color: var(--jade-primary);
+}
+
+.connections-filter:hover:not(.active) { color: var(--text-secondary); }
+
+/* Connection type picker in editor */
+.connection-type-picker {
+    margin-bottom: var(--space-sm);
+}
+
+.connection-type-label {
+    font-family: var(--font-handwritten);
+    font-size: 14px;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: var(--space-sm);
+}
+
+.connection-type-options {
+    display: flex;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+}
+
+.connection-type-btn {
+    padding: 6px 14px;
+    border-radius: var(--radius-xl);
+    border: var(--border-medium);
+    background: var(--bg-card);
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.connection-type-btn.active {
+    background: var(--bg-elevated);
+    border-color: var(--jade-primary);
+    color: var(--jade-primary);
+}
+
+.connection-type-btn:hover:not(.active) { color: var(--text-secondary); }
+
+/* Connection type tag on detail view */
+.connection-tag {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 14px;
+    border-radius: var(--radius-xl);
+    margin-top: var(--space-sm);
+    text-transform: capitalize;
+}
+
+.connection-tag-love-interest {
+    background: rgba(155, 138, 184, 0.15);
+    color: var(--lavender);
+}
+
+.connection-tag-friend {
+    background: rgba(201, 164, 90, 0.15);
+    color: var(--honey);
+}
+
+.connection-tag-family {
+    background: rgba(201, 134, 126, 0.15);
+    color: var(--rose);
+}
+
 /* ═══════ SENSORY ANCHORS ═══════ */
 .anchors-intro {
     font-family: var(--font-handwritten);

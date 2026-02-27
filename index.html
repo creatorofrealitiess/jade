@@ -151,6 +151,7 @@
                         <div>
                             <label class="btn-secondary btn-sm" for="personaPhotoUpload">Upload Photo</label>
                             <input type="file" id="personaPhotoUpload" accept="image/*" style="display:none">
+                            <div class="anchor-card-meta" style="margin-top:4px">Your Jade self</div>
                         </div>
                     </div>
                     <input class="auth-input persona-field-input" id="personaEdName" placeholder="Name in Jade">
@@ -178,8 +179,84 @@
 
             <!-- CONNECTIONS -->
             <div class="page" id="page-connections">
-                <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Connections</h2></div>
-                <div class="placeholder-content"><div class="placeholder-icon">&#128154;</div><h3>Your People</h3><p>Love interests, friends, neighbours &mdash; the souls who share Jade with you.</p><span class="coming-soon-badge">coming in next update &#10022;</span></div>
+                <div class="section-header">
+                    <button class="back-btn" onclick="connectionsBack()">&larr;</button>
+                    <h2 id="connectionsTitle">Connections</h2>
+                    <button class="section-action-btn" id="connectionsNewBtn" onclick="connectionNew()">+</button>
+                </div>
+
+                <!-- FILTER TABS -->
+                <div class="connections-filters" id="connectionsFilters">
+                    <button class="connections-filter active" data-filter="all" onclick="filterConnections('all')">All</button>
+                    <button class="connections-filter" data-filter="love interest" onclick="filterConnections('love interest')">&#128156; Love</button>
+                    <button class="connections-filter" data-filter="friend" onclick="filterConnections('friend')">&#128155; Friends</button>
+                    <button class="connections-filter" data-filter="family" onclick="filterConnections('family')">&#129782; Family</button>
+                </div>
+
+                <!-- LIST VIEW -->
+                <div id="connectionsList" class="personas-list"></div>
+
+                <!-- DETAIL VIEW -->
+                <div id="connectionDetail" class="persona-detail" style="display:none">
+                    <div class="persona-detail-hero">
+                        <div class="persona-detail-avatar" id="connectionDetailAvatar">
+                            <img id="connectionDetailAvatarImg" src="" style="display:none">
+                            <span id="connectionDetailAvatarInitial"></span>
+                        </div>
+                        <h2 class="persona-detail-name" id="connectionDetailName"></h2>
+                        <p class="persona-detail-age" id="connectionDetailAge"></p>
+                        <div id="connectionDetailTag" class="connection-tag"></div>
+                        <div class="persona-detail-actions">
+                            <button class="btn-secondary btn-sm" onclick="connectionEdit()">Edit</button>
+                            <button class="btn-danger btn-sm" onclick="connectionDelete()">Delete</button>
+                        </div>
+                    </div>
+                    <div id="connectionDetailFields" class="persona-detail-fields"></div>
+                </div>
+
+                <!-- EDITOR -->
+                <div id="connectionEditor" class="persona-editor" style="display:none">
+                    <div class="persona-editor-avatar-row">
+                        <div class="persona-editor-avatar" id="connectionEditorAvatar">
+                            <img id="connectionEditorAvatarImg" src="" style="display:none">
+                            <span id="connectionEditorAvatarInitial">?</span>
+                        </div>
+                        <div>
+                            <label class="btn-secondary btn-sm" for="connectionPhotoUpload">Upload Photo</label>
+                            <input type="file" id="connectionPhotoUpload" accept="image/*" style="display:none">
+                            <div class="anchor-card-meta" style="margin-top:4px">A soul in Jade</div>
+                        </div>
+                    </div>
+                    <input class="auth-input persona-field-input" id="connectionEdName" placeholder="Their name in Jade">
+                    <input class="auth-input persona-field-input" id="connectionEdAge" placeholder="Age (e.g. 28)">
+                    <div class="connection-type-picker">
+                        <span class="connection-type-label">Who are they?</span>
+                        <div class="connection-type-options" id="connectionTypeOptions">
+                            <button class="connection-type-btn" data-type="love interest" onclick="pickConnectionType('love interest')">&#128156; Love Interest</button>
+                            <button class="connection-type-btn" data-type="friend" onclick="pickConnectionType('friend')">&#128155; Friend</button>
+                            <button class="connection-type-btn" data-type="family" onclick="pickConnectionType('family')">&#129782; Family</button>
+                        </div>
+                    </div>
+                    <textarea class="auth-input persona-field-input" id="connectionEdRelationship" placeholder="Relationship &mdash; who are they to you? How does it feel?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="connectionEdAppearance" placeholder="Appearance &mdash; what do they look like?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="connectionEdPersonality" placeholder="Personality &mdash; what are they like?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="connectionEdDailyLife" placeholder="Daily life &mdash; what do they do day to day?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="connectionEdStyle" placeholder="Style &mdash; how do they dress?" rows="3"></textarea>
+                    <textarea class="auth-input persona-field-input" id="connectionEdBackstory" placeholder="Backstory &mdash; their story in Jade" rows="3"></textarea>
+
+                    <div class="persona-extras-section">
+                        <div class="persona-extras-header">
+                            <span class="anchor-card-title" style="font-size:16px">Extras</span>
+                            <button class="btn-secondary btn-sm" onclick="connectionAddExtra()">+ Field</button>
+                        </div>
+                        <div id="connectionExtras" class="persona-extras-list"></div>
+                    </div>
+
+                    <div class="journal-editor-actions">
+                        <button class="btn-secondary" onclick="connectionCancelEdit()">Cancel</button>
+                        <button class="btn-primary btn-sm" onclick="connectionSave()">Save Connection</button>
+                    </div>
+                </div>
             </div>
 
             <!-- OUR SPACE -->
