@@ -507,44 +507,66 @@ function buildAvatarHtml(uid, name) {
     }
 }
 
+let msgLongPressTimer = null;
+
 function initMessenger() {
     if (messengerUnsub) messengerUnsub();
     
     loadUserData().then(() => {
         messengerUnsub = db.collection('messages').orderBy('sentAt', 'asc').limitToLast(100).onSnapshot(snapshot => {
-            const container = document.getElementById('messengerMessages');
-            container.innerHTML = '';
+        const container = document.getElementById('messengerMessages');
+        container.innerHTML = '';
 
-            if (snapshot.empty) {
-                container.innerHTML = '<div class="empty-state" style="padding-top:60px"><div class="empty-state-icon">\uD83D\uDCAC</div><p>Start talking as your Jade selves. This is your space together.</p></div>';
-                return;
-            }
+        if (snapshot.empty) {
+            container.innerHTML = '<div class="empty-state" style="padding-top:60px"><div class="empty-state-icon">\uD83D\uDCAC</div><p>Start talking as your Jade selves. This is your space together.</p></div>';
+            return;
+        }
 
-            snapshot.docs.forEach(doc => {
-                const msg = doc.data();
-                const isMine = msg.senderId === currentUser.uid;
-                const time = msg.sentAt ? new Date(msg.sentAt.seconds * 1000).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '';
-                
-                const row = document.createElement('div');
-                row.className = 'msg-row ' + (isMine ? 'sent' : 'received');
-                
-                const avatarHtml = buildAvatarHtml(msg.senderId, msg.senderName);
-                
-                let msgHtml = '';
-                if (!isMine) {
-                    const senderName = (userDataCache[msg.senderId] ? userDataCache[msg.senderId].name : null) || msg.senderName || 'Unknown';
-                    msgHtml += '<span class="msg-sender">' + senderName.replace(/</g, '&lt;') + '</span>';
+        snapshot.docs.forEach(doc => {
+            const msg = doc.data();
+            const isMine = msg.senderId === currentUser.uid;
+            
+            const row = document.createElement('div');
+            row.className = 'msg-row ' + (isMine ? 'sent' : 'received');
+            
+            // Avatar
+            const avatarDiv = document.createElement('div');
+            avatarDiv.innerHTML = buildAvatarHtml(msg.senderId, msg.senderName);
+            row.appendChild(avatarDiv.firstChild);
+            
+            const safeText = document.createElement('span');
+            safeText.textContent = msg.text;
+            
+            const bubble = document.createElement('div');
+            bubble.className = 'msg ' + (isMine ? 'sent' : 'received');
+            bubble.innerHTML = safeText.innerHTML;
+            
+            // Long-press to delete (works for both sisters)
+            let timer = null;
+            const startPress = (e) => {
+                timer = setTimeout(() => {
+                    if (confirm('Delete this message?')) {
+                        db.collection('messages').doc(doc.id).delete();
+                    }
+                }, 500);
+            };
+            const cancelPress = () => { if (timer) clearTimeout(timer); };
+            
+            bubble.addEventListener('touchstart', startPress, { passive: true });
+            bubble.addEventListener('touchend', cancelPress);
+            bubble.addEventListener('touchmove', cancelPress);
+            bubble.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                if (confirm('Delete this message?')) {
+                    db.collection('messages').doc(doc.id).delete();
                 }
-                const safeText = document.createElement('span');
-                safeText.textContent = msg.text;
-                msgHtml += safeText.innerHTML;
-                msgHtml += '<span class="msg-time">' + time + '</span>';
-                
-                row.innerHTML = avatarHtml + '<div class="msg ' + (isMine ? 'sent' : 'received') + '">' + msgHtml + '</div>';
-                container.appendChild(row);
             });
+            
+            row.appendChild(bubble);
+            container.appendChild(row);
+        });
 
-            container.scrollTop = container.scrollHeight;
+        container.scrollTop = container.scrollHeight;
         });
     });
 }

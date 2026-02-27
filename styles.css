@@ -706,8 +706,8 @@ body::after {
     border-bottom-left-radius: 4px;
 }
 
-.msg-time { font-size: 10px; opacity: 0.5; margin-top: 4px; display: block; }
-.msg-sender { font-family: var(--font-handwritten); font-size: 13px; opacity: 0.6; margin-bottom: 2px; display: block; }
+.msg-time { display: none; }
+.msg-sender { display: none; }
 
 .messenger-input-area {
     display: flex; gap: var(--space-sm);
@@ -737,6 +737,8 @@ body::after {
 }
 
 .messenger-send:hover { transform: scale(1.05); }
+
+.msg:active { opacity: 0.7; transition: opacity 0.1s; }
 
 /* ═══════ MODAL ═══════ */
 .modal-overlay {
