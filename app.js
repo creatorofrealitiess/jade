@@ -1720,7 +1720,7 @@ function albumIcon(name) {
     if (n.includes('pet')) return '';
     if (n.includes('home')) return '';
     if (n.includes('world')) return '';
-    return '\u{1F4F7}';
+    return '';
 }
 
 function spaceOpenAlbum(albumId) {
