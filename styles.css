@@ -1284,12 +1284,12 @@ body::after {
     color: var(--lavender);
 }
 
-.connection-tag-friend {
+.connection-tag-friends {
     background: rgba(201, 164, 90, 0.15);
     color: var(--honey);
 }
 
-.connection-tag-family {
+.connection-tag-kin {
     background: rgba(201, 134, 126, 0.15);
     color: var(--rose);
 }

@@ -876,18 +876,15 @@ function renderConnectionsList() {
         return;
     }
 
-    const typeEmojis = { 'love interest': '💜', 'friend': '💛', 'family': '🧑‍🤝‍🧑' };
-
     container.innerHTML = filtered.map(c => {
         const avatarHtml = c.photoUrl
             ? '<img src="' + c.photoUrl + '" alt="">'
             : '<span>' + (c.name || '?')[0].toUpperCase() + '</span>';
-        const emoji = typeEmojis[c.type] || '💚';
         return '<div class="persona-card" onclick="connectionOpen(\'' + c.id + '\')">' +
             '<div class="persona-card-avatar">' + avatarHtml + '</div>' +
             '<div class="persona-card-info">' +
                 '<div class="persona-card-name">' + escapeHtml(c.name || 'Unnamed') + '</div>' +
-                '<div class="persona-card-age">' + emoji + ' ' + escapeHtml(c.type || '') + (c.age ? ' · ' + escapeHtml(c.age) : '') + '</div>' +
+                '<div class="persona-card-age">' + escapeHtml(c.type || '') + (c.age ? ' · ' + escapeHtml(c.age) : '') + '</div>' +
                 (c.relationship ? '<div class="persona-card-preview">' + escapeHtml(c.relationship) + '</div>' : '') +
             '</div>' +
             '<div class="persona-card-arrow">&rsaquo;</div>' +
@@ -939,10 +936,9 @@ function connectionOpen(id) {
     document.getElementById('connectionDetailName').textContent = c.name || 'Unnamed';
     document.getElementById('connectionDetailAge').textContent = c.age ? 'Age ' + c.age : '';
 
-    const typeEmojis = { 'love interest': '💜', 'friend': '💛', 'family': '🧑‍🤝‍🧑' };
     const tagEl = document.getElementById('connectionDetailTag');
     if (c.type) {
-        tagEl.textContent = (typeEmojis[c.type] || '💚') + ' ' + c.type;
+        tagEl.textContent = c.type;
         tagEl.className = 'connection-tag connection-tag-' + c.type.replace(/\s+/g, '-');
         tagEl.style.display = 'inline-block';
     } else {
