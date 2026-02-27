@@ -1716,10 +1716,10 @@ function renderSpaceAlbums() {
 
 function albumIcon(name) {
     const n = name.toLowerCase();
-    if (n.includes('us') || n.includes('all')) return '\u{1F491}';
-    if (n.includes('pet')) return '\u{1F43E}';
-    if (n.includes('home')) return '\u{1F3E1}';
-    if (n.includes('world')) return '\u{1F30D}';
+    if (n.includes('us') || n.includes('all')) return '';
+    if (n.includes('pet')) return '';
+    if (n.includes('home')) return '';
+    if (n.includes('world')) return '';
     return '\u{1F4F7}';
 }
 
