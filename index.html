@@ -394,6 +394,19 @@ You are already there."></textarea>
             </div>
         </main>
 
+        <!-- PERSISTENT MINI SPOTIFY PLAYER -->
+        <div class="mini-player" id="miniPlayer" style="display:none">
+            <div class="mini-player-info">
+                <span class="mini-player-icon">&#127925;</span>
+                <span class="mini-player-name" id="miniPlayerName">Now Playing</span>
+            </div>
+            <div class="mini-player-controls">
+                <button class="mini-player-btn" id="miniPlayerExpand" title="Expand">&#9650;</button>
+                <button class="mini-player-btn" id="miniPlayerClose" title="Close">&times;</button>
+            </div>
+            <div class="mini-player-embed" id="miniPlayerEmbed"></div>
+        </div>
+
         <nav class="bottom-nav">
             <button class="nav-item active" data-nav="home"><span class="nav-icon">&#127969;</span><span class="nav-label">Home</span></button>
             <button class="nav-item" data-nav="journal"><span class="nav-icon">&#128214;</span><span class="nav-label">Journal</span></button>

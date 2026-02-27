@@ -1257,7 +1257,10 @@ function renderPlaylists() {
             '<div class="anchor-card-header">' +
                 '<div><div class="anchor-card-title">' + escapeHtml(pl.name) + '</div>' +
                 '<div class="anchor-card-meta">added by ' + escapeHtml(pl.addedBy || 'unknown') + '</div></div>' +
-                '<button class="affirmation-delete-btn" onclick="removePlaylist(' + i + ')" title="Remove">&times;</button>' +
+                '<div style="display:flex;gap:4px;align-items:center">' +
+                    '<button class="btn-secondary btn-sm" onclick="playInMiniPlayer(\'' + pl.id + '\', \'' + escapeHtml(pl.name).replace(/'/g, "\\'") + '\')" style="padding:4px 12px;font-size:12px">&#9654; Play</button>' +
+                    '<button class="affirmation-delete-btn" onclick="removePlaylist(' + i + ')" title="Remove">&times;</button>' +
+                '</div>' +
             '</div>' +
             '<div class="playlist-embed">' +
                 '<iframe src="https://open.spotify.com/embed/playlist/' + pl.id + '?utm_source=generator&theme=0" ' +
@@ -1383,6 +1386,43 @@ function renderScents() {
         '</div>'
     ).join('');
 }
+
+// ═══════ PERSISTENT MINI PLAYER ═══════
+
+let miniPlayerActive = false;
+
+function playInMiniPlayer(playlistId, name) {
+    const player = document.getElementById('miniPlayer');
+    const embed = document.getElementById('miniPlayerEmbed');
+    const nameEl = document.getElementById('miniPlayerName');
+
+    nameEl.textContent = name || 'Now Playing';
+    embed.innerHTML = '<iframe src="https://open.spotify.com/embed/playlist/' + playlistId + '?utm_source=generator&theme=0" ' +
+        'width="100%" height="152" frameBorder="0" allowfullscreen="" ' +
+        'allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>';
+
+    player.style.display = 'block';
+    player.classList.add('expanded');
+    document.body.classList.add('mini-player-active');
+    miniPlayerActive = true;
+}
+
+function closeMiniPlayer() {
+    const player = document.getElementById('miniPlayer');
+    player.style.display = 'none';
+    player.classList.remove('expanded');
+    document.getElementById('miniPlayerEmbed').innerHTML = '';
+    document.body.classList.remove('mini-player-active');
+    miniPlayerActive = false;
+}
+
+function toggleMiniPlayerExpand() {
+    document.getElementById('miniPlayer').classList.toggle('expanded');
+}
+
+document.getElementById('miniPlayerClose').addEventListener('click', closeMiniPlayer);
+document.getElementById('miniPlayerExpand').addEventListener('click', toggleMiniPlayerExpand);
+document.getElementById('miniPlayerName').parentElement.addEventListener('click', toggleMiniPlayerExpand);
 
 // ── Utility ──
 function escapeHtml(str) {
