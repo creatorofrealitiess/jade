@@ -2351,7 +2351,7 @@ body.mini-player-active .content-area {
     }
 
     .feature-card.full-width {
-        grid-column: span 3;
+        grid-column: auto;
     }
 
     .feature-card {
