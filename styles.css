@@ -190,6 +190,14 @@ body::after {
 .auth-error { color: var(--rose); font-size: 13px; min-height: 20px; margin-top: var(--space-xs); }
 
 /* ═══════ APP SHELL ═══════ */
+.content-area-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+}
+
 #app {
     position: relative;
     z-index: 1;
@@ -2259,16 +2267,283 @@ body.mini-player-active .content-area {
 
 .float-gentle { animation: floatLeaf 6s ease-in-out infinite; }
 
-/* ═══════ RESPONSIVE ═══════ */
-@media (min-width: 600px) {
-    .content-area, .bottom-nav, .app-header {
-        max-width: 540px;
+/* ═══════ RESPONSIVE — DESKTOP ═══════ */
+
+/* Tablet & small desktop (768px+) */
+@media (min-width: 768px) {
+    /* App shell: side nav + centered content */
+    #app {
+        flex-direction: row;
+        height: 100vh;
+    }
+
+    .app-header {
+        padding: var(--space-xl) var(--space-lg) var(--space-md);
+    }
+
+    /* Move bottom nav to left sidebar */
+    .bottom-nav {
+        flex-direction: column;
+        width: 80px;
+        height: 100vh;
+        border-top: none;
+        border-right: var(--border-subtle);
+        padding: var(--space-xl) var(--space-sm);
+        gap: var(--space-sm);
+        justify-content: flex-start;
+        order: -1;
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .bottom-nav::before {
+        display: none;
+    }
+
+    .nav-item {
+        width: 100%;
+        padding: var(--space-sm) var(--space-xs);
+        border-radius: var(--radius-md);
+    }
+
+    .nav-item.active::after {
+        top: 50%;
+        left: -9px;
+        right: auto;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 20px;
+        border-radius: 0 3px 3px 0;
+    }
+
+    .nav-icon { font-size: 20px; }
+    .nav-label { font-size: 9px; }
+
+    /* Main content wrapper */
+    .content-area-wrapper {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    /* Wider content */
+    .content-area {
+        max-width: 720px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+        padding: 0 var(--space-xl) var(--space-xl);
+    }
+
+    .app-header {
+        max-width: 720px;
+        margin-left: auto;
+        margin-right: auto;
+        width: 100%;
+    }
+
+    /* Feature grid: 3 columns */
+    .feature-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-lg);
+    }
+
+    .feature-card.full-width {
+        grid-column: span 3;
+    }
+
+    .feature-card {
+        padding: var(--space-xl);
+    }
+
+    .feature-card-icon { font-size: 32px; }
+    .feature-card-title { font-size: 18px; }
+    .feature-card-desc { font-size: 13px; }
+
+    /* Affirmation banner wider */
+    .affirmation-banner {
+        padding: var(--space-xl) var(--space-2xl);
+    }
+
+    .affirmation-banner p {
+        font-size: 20px;
+    }
+
+    /* Alignment widget */
+    .alignment-widget {
+        padding: var(--space-xl);
+    }
+
+    /* Journal cards */
+    .journal-entries {
+        gap: var(--space-lg);
+    }
+
+    .journal-entry-card {
+        padding: var(--space-xl);
+    }
+
+    .journal-entry-title { font-size: 21px; }
+
+    .journal-editor-title { font-size: 28px; }
+    .journal-editor-body { font-size: 16px; min-height: 400px; }
+
+    /* Messenger: taller on desktop */
+    .messenger-container {
+        height: calc(100vh - 200px);
+        max-height: 700px;
+    }
+
+    .messenger-messages {
+        padding: var(--space-lg);
+        gap: var(--space-md);
+    }
+
+    .msg { font-size: 15px; }
+    .msg-row { max-width: 65%; }
+
+    /* Persona cards */
+    .persona-card { padding: var(--space-xl); }
+    .persona-card-name { font-size: 22px; }
+    .persona-detail-name { font-size: 32px; }
+    .persona-detail-avatar { width: 120px; height: 120px; }
+    .persona-detail-avatar span { font-size: 44px; }
+
+    /* Connections */
+    .connections-filters {
+        gap: var(--space-sm);
+    }
+
+    /* World detail */
+    .world-detail-photo {
+        max-width: 480px;
+        height: 260px;
+    }
+
+    /* Space albums: 3 columns */
+    .space-albums-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-lg);
+    }
+
+    /* Photo grid: 4 columns */
+    .space-photo-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 6px;
+    }
+
+    /* Scene cards */
+    .scene-card-body { padding: var(--space-lg) var(--space-xl) var(--space-xl); }
+    .scene-card-title { font-size: 21px; }
+
+    /* Scene detail */
+    .scene-detail-title { font-size: 30px; }
+    .scene-detail-text { font-size: 16px; }
+
+    /* Timeline */
+    .timeline-card { padding: var(--space-xl); }
+    .timeline-card-title { font-size: 20px; }
+
+    /* Settings */
+    .settings-section { padding: var(--space-xl); }
+
+    /* Anchors */
+    .anchors-tabs {
+        max-width: 400px;
+    }
+
+    .palette-swatches { height: 88px; }
+
+    /* Section headers */
+    .section-header h2 { font-size: 30px; }
+
+    /* Modals center on desktop */
+    .modal-overlay {
+        align-items: center;
+    }
+
+    .modal-content {
+        border-radius: var(--radius-xl);
+        max-width: 500px;
+        max-height: 70vh;
+    }
+
+    /* Empty states */
+    .empty-state { padding: var(--space-2xl) var(--space-xl); }
+    .empty-state-icon { font-size: 48px; }
+    .empty-state p { font-size: 15px; max-width: 360px; }
+
+    /* Mini player */
+    .mini-player {
+        max-width: 720px;
         margin-left: auto;
         margin-right: auto;
     }
 }
 
-@media (min-width: 900px) {
-    .feature-grid { grid-template-columns: repeat(3, 1fr); }
-    .feature-card.full-width { grid-column: span 1; }
+/* Large desktop (1080px+) */
+@media (min-width: 1080px) {
+    .bottom-nav {
+        width: 100px;
+        padding: var(--space-xl) var(--space-md);
+    }
+
+    .nav-icon { font-size: 22px; }
+    .nav-label { font-size: 10px; }
+
+    .content-area,
+    .app-header {
+        max-width: 860px;
+    }
+
+    .mini-player {
+        max-width: 860px;
+    }
+
+    .feature-card {
+        padding: var(--space-xl) var(--space-xl);
+    }
+
+    .feature-card-title { font-size: 19px; }
+
+    /* Messenger wider bubbles */
+    .msg-row { max-width: 55%; }
+
+    /* Space: 4 album columns */
+    .space-albums-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    /* Photo grid: 5 columns */
+    .space-photo-grid {
+        grid-template-columns: repeat(5, 1fr);
+    }
+
+    /* Scene list: 2-column */
+    .scene-list {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-lg);
+    }
+
+    /* Timeline cards wider */
+    .timeline-card-title { font-size: 22px; }
+}
+
+/* Extra wide (1400px+) */
+@media (min-width: 1400px) {
+    .content-area,
+    .app-header {
+        max-width: 1000px;
+    }
+
+    .mini-player {
+        max-width: 1000px;
+    }
+
+    .space-photo-grid {
+        grid-template-columns: repeat(6, 1fr);
+    }
 }
