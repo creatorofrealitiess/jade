@@ -1629,7 +1629,7 @@ async function worldDelete() {
 
 // ═══════ OUR SPACE — Album-Based Photo Gallery ═══════
 
-const DEFAULT_ALBUMS = ['All of Us', 'Pets', 'Home', 'In the World'];
+const DEFAULT_ALBUMS = ['Us', 'Pets', 'Home', 'World'];
 let spaceAlbums = [];
 let spacePhotos = [];
 let spaceAlbumsUnsub = null;
