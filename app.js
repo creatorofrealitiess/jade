@@ -1660,6 +1660,42 @@ let currentAlbumId = null;
 let currentPhotoId = null;
 let spaceGenController = null;
 let spaceGeneratedImageData = null;
+let spaceRefImages = []; // Array of { data: base64, mimeType: string }
+
+document.getElementById('genRefUpload').addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    
+    files.forEach(file => {
+        if (!file.type.startsWith('image/')) return;
+        if (spaceRefImages.length >= 5) return; // Max 5 references
+        
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result.split(',')[1];
+            spaceRefImages.push({ data: base64, mimeType: file.type, name: file.name });
+            renderRefGrid();
+        };
+        reader.readAsDataURL(file);
+    });
+    
+    e.target.value = ''; // Reset so same file can be re-added
+});
+
+function renderRefGrid() {
+    const grid = document.getElementById('genRefGrid');
+    grid.innerHTML = spaceRefImages.map((img, i) => 
+        '<div class="gen-ref-thumb">' +
+            '<img src="data:' + img.mimeType + ';base64,' + img.data + '">' +
+            '<button class="gen-ref-remove" onclick="removeRefImage(' + i + ')">&times;</button>' +
+        '</div>'
+    ).join('');
+}
+
+function removeRefImage(index) {
+    spaceRefImages.splice(index, 1);
+    renderRefGrid();
+}
 
 function initSpace() {
     // Init default albums if none exist
@@ -1907,6 +1943,8 @@ function spaceOpenGenerate() {
     document.getElementById('spaceGenError').textContent = '';
     document.getElementById('spaceGenBtn').style.display = 'block';
     spaceGeneratedImageData = null;
+    spaceRefImages = [];
+    renderRefGrid();
     document.getElementById('spaceGenerateModal').classList.add('visible');
     setTimeout(() => document.getElementById('spaceGenPrompt').focus(), 100);
 }
@@ -1939,7 +1977,12 @@ async function spaceGenerate() {
                 signal: spaceGenController.signal,
                 body: JSON.stringify({
                     contents: [{
-                        parts: [{ text: 'Generate a high quality, photorealistic 2K resolution image: ' + prompt }]
+                        parts: [
+                            ...spaceRefImages.map(img => ({
+                                inlineData: { mimeType: img.mimeType, data: img.data }
+                            })),
+                            { text: 'Generate a high quality, photorealistic 2K resolution image: ' + prompt + (spaceRefImages.length > 0 ? ' Use the attached reference images to inform the characters, style, and visual details.' : '') }
+                        ]
                     }],
                     generationConfig: {
                         responseModalities: ['TEXT', 'IMAGE'],

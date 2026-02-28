@@ -2267,6 +2267,64 @@ body.mini-player-active .content-area {
 
 .float-gentle { animation: floatLeaf 6s ease-in-out infinite; }
 
+/* ═══════ GENERATE REFERENCE IMAGES ═══════ */
+.gen-ref-section {
+    margin-top: var(--space-md);
+}
+
+.gen-ref-label {
+    font-family: var(--font-handwritten);
+    font-size: 14px;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: var(--space-sm);
+}
+
+.gen-ref-grid {
+    display: flex;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-sm);
+}
+
+.gen-ref-thumb {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    position: relative;
+    border: var(--border-subtle);
+}
+
+.gen-ref-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gen-ref-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gen-ref-add {
+    display: inline-block;
+    cursor: pointer;
+    margin-top: var(--space-xs);
+}
+
 /* ═══════ NOTIFICATION PREFERENCES ═══════ */
 .notif-pref-row {
     display: flex;

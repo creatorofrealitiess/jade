@@ -386,8 +386,16 @@
                             <button class="modal-close" onclick="spaceCloseGenerate()">&times;</button>
                         </div>
                         <div class="modal-body">
-                            <p class="modal-description">Describe what you want to see. Nano Banana Pro will create it at 2K resolution (~$0.13 per image).</p>
+                            <p class="modal-description">Describe what you want to see. You can attach reference images for characters, places, or styles.</p>
                             <textarea class="auth-input" id="spaceGenPrompt" placeholder="A golden retriever sleeping by the stone fireplace in our Jade cottage, warm afternoon light through the window..." rows="4" style="width:100%;resize:none"></textarea>
+                            
+                            <div class="gen-ref-section">
+                                <label class="gen-ref-label">Reference images</label>
+                                <div class="gen-ref-grid" id="genRefGrid"></div>
+                                <label class="btn-secondary btn-sm gen-ref-add" for="genRefUpload">+ Add Reference</label>
+                                <input type="file" id="genRefUpload" accept="image/*" multiple style="display:none">
+                            </div>
+
                             <div id="spaceGenPreview" class="space-gen-preview" style="display:none">
                                 <img id="spaceGenPreviewImg" src="">
                                 <div class="space-gen-preview-actions">
