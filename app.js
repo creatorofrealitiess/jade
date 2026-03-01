@@ -315,7 +315,10 @@ function initAlignmentTracker() {
     db.collection('shared').doc('alignment').onSnapshot(doc => {
         if (doc.exists) {
             alignmentData = doc.data();
-            if (alignmentData[today]) fillAlignment(alignmentData[today]);
+            // Load current user's alignment for today
+            const myKey = today + '_' + currentUser.uid;
+            if (alignmentData[myKey]) fillAlignment(alignmentData[myKey]);
+            else fillAlignment(0);
             renderAlignmentChart();
         }
     });
@@ -333,7 +336,8 @@ document.getElementById('alignmentScale').addEventListener('click', (e) => {
     const level = parseInt(dot.dataset.level);
     fillAlignment(level);
     const today = new Date().toISOString().split('T')[0];
-    db.collection('shared').doc('alignment').set({ [today]: level }, { merge: true });
+    const myKey = today + '_' + currentUser.uid;
+    db.collection('shared').doc('alignment').set({ [myKey]: level }, { merge: true });
 });
 
 document.getElementById('alignmentHistoryToggle').addEventListener('click', () => {
@@ -357,25 +361,62 @@ function renderAlignmentChart() {
     const todayStr = today.toISOString().split('T')[0];
     const days = [];
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    // Find all unique user IDs in alignment data
+    const userIds = new Set();
+    for (const key of Object.keys(alignmentData)) {
+        const parts = key.split('_');
+        if (parts.length >= 2) {
+            // Key format: "2026-03-01_userId"
+            const uid = parts.slice(1).join('_'); // Handle UIDs with underscores
+            userIds.add(uid);
+        } else {
+            // Legacy format: "2026-03-01" (shared) — treat as current user for migration
+            userIds.add('legacy');
+        }
+    }
     
     for (let i = 6; i >= 0; i--) {
         const d = new Date(today);
         d.setDate(d.getDate() - i);
         const dateStr = d.toISOString().split('T')[0];
+        
+        // Get each user's level for this day
+        const levels = {};
+        for (const uid of userIds) {
+            if (uid === 'legacy') {
+                levels[uid] = alignmentData[dateStr] || 0;
+            } else {
+                levels[uid] = alignmentData[dateStr + '_' + uid] || 0;
+            }
+        }
+        
         days.push({
             date: dateStr,
             label: dayNames[d.getDay()],
-            level: alignmentData[dateStr] || 0,
+            levels: levels,
             isToday: dateStr === todayStr
         });
     }
+
+    // Assign colors: current user gets jade, other gets rose
+    const uidList = Array.from(userIds);
     
     chart.innerHTML = days.map(day => {
-        const heightPct = day.level > 0 ? (day.level / 7) * 100 : 0;
-        const barClass = day.level === 0 ? 'alignment-chart-bar empty' : ('alignment-chart-bar' + (day.isToday ? ' today' : ''));
         const labelClass = 'alignment-chart-label' + (day.isToday ? ' today' : '');
+        
+        let barsHtml = '';
+        for (const uid of uidList) {
+            const level = day.levels[uid] || 0;
+            const heightPct = level > 0 ? (level / 7) * 100 : 0;
+            const isMe = uid === currentUser.uid || (uid === 'legacy');
+            const colorClass = isMe ? 'alignment-bar-sister' : 'alignment-bar-me';
+            const barClass = level === 0 ? 'alignment-chart-bar empty' : ('alignment-chart-bar ' + colorClass + (day.isToday ? ' today' : ''));
+            barsHtml += '<div class="alignment-chart-bar-wrap"><div class="' + barClass + '" style="height:' + (level > 0 ? heightPct + '%' : '2px') + '"></div></div>';
+        }
+        
         return '<div class="alignment-chart-day">' +
-            '<div class="alignment-chart-bar-wrap"><div class="' + barClass + '" style="height:' + (day.level > 0 ? heightPct + '%' : '2px') + '"></div></div>' +
+            '<div class="alignment-chart-bars">' + barsHtml + '</div>' +
             '<span class="' + labelClass + '">' + day.label + '</span></div>';
     }).join('');
 }
@@ -2064,10 +2105,11 @@ function lbApply() {
     // Desktop: scroll/trackpad to zoom
     container.addEventListener('wheel', (e) => {
         e.preventDefault();
+        e.stopPropagation();
         // Trackpad pinch sends wheel with ctrlKey
         const factor = e.ctrlKey
-            ? (e.deltaY > 0 ? 0.95 : 1.05)  // Trackpad pinch (finer)
-            : (e.deltaY > 0 ? 0.9 : 1.1);    // Mouse wheel
+            ? (1 - e.deltaY * 0.01)  // Trackpad pinch (smooth, proportional)
+            : (e.deltaY > 0 ? 0.93 : 1.07);  // Mouse/trackpad scroll (gentler)
         lbScale = Math.min(Math.max(lbScale * factor, 1), 8);
         if (lbScale <= 1.05) { lbPosX = 0; lbPosY = 0; }
         lbApply();
@@ -2075,10 +2117,14 @@ function lbApply() {
     }, { passive: false });
 
     // Safari trackpad pinch gesture
-    container.addEventListener('gesturestart', (e) => { e.preventDefault(); }, { passive: false });
+    let gestureStartScale = 1;
+    container.addEventListener('gesturestart', (e) => { 
+        e.preventDefault(); 
+        gestureStartScale = lbScale;
+    }, { passive: false });
     container.addEventListener('gesturechange', (e) => {
         e.preventDefault();
-        lbScale = Math.min(Math.max(lbScale * e.scale, 1), 8);
+        lbScale = Math.min(Math.max(gestureStartScale * e.scale, 1), 8);
         if (lbScale <= 1.05) { lbPosX = 0; lbPosY = 0; }
         lbApply();
         container.style.cursor = lbScale > 1 ? 'grab' : '';

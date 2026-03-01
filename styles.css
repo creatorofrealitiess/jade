@@ -438,21 +438,38 @@ body::after {
     height: 100%;
 }
 
-.alignment-chart-bar-wrap {
+.alignment-chart-bars {
     flex: 1;
     width: 100%;
     display: flex;
     align-items: flex-end;
     justify-content: center;
+    gap: 3px;
+}
+
+.alignment-chart-bar-wrap {
+    flex: 1;
+    max-width: 14px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    height: 100%;
 }
 
 .alignment-chart-bar {
     width: 100%;
-    max-width: 28px;
     border-radius: 4px 4px 2px 2px;
     background: linear-gradient(to top, var(--jade-pale), var(--jade-primary));
     transition: height 0.4s ease;
     min-height: 2px;
+}
+
+.alignment-bar-me {
+    background: linear-gradient(to top, var(--jade-pale), var(--jade-primary));
+}
+
+.alignment-bar-sister {
+    background: linear-gradient(to top, #f5d5d5, var(--rose));
 }
 
 .alignment-chart-bar.empty {
