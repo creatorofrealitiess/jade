@@ -362,18 +362,15 @@ function renderAlignmentChart() {
     const days = [];
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    // Find all unique user IDs in alignment data
+    // Find all unique user IDs in alignment data (skip legacy shared keys)
     const userIds = new Set();
     for (const key of Object.keys(alignmentData)) {
-        const parts = key.split('_');
-        if (parts.length >= 2) {
-            // Key format: "2026-03-01_userId"
-            const uid = parts.slice(1).join('_'); // Handle UIDs with underscores
+        const underscoreIdx = key.indexOf('_', 11); // After "2026-03-01_"
+        if (underscoreIdx > 0) {
+            const uid = key.substring(underscoreIdx + 1);
             userIds.add(uid);
-        } else {
-            // Legacy format: "2026-03-01" (shared) — treat as current user for migration
-            userIds.add('legacy');
         }
+        // Skip legacy keys (no underscore after date) — old shared data
     }
     
     for (let i = 6; i >= 0; i--) {
@@ -384,11 +381,7 @@ function renderAlignmentChart() {
         // Get each user's level for this day
         const levels = {};
         for (const uid of userIds) {
-            if (uid === 'legacy') {
-                levels[uid] = alignmentData[dateStr] || 0;
-            } else {
-                levels[uid] = alignmentData[dateStr + '_' + uid] || 0;
-            }
+            levels[uid] = alignmentData[dateStr + '_' + uid] || 0;
         }
         
         days.push({
@@ -409,7 +402,7 @@ function renderAlignmentChart() {
         for (const uid of uidList) {
             const level = day.levels[uid] || 0;
             const heightPct = level > 0 ? (level / 7) * 100 : 0;
-            const isMe = uid === currentUser.uid || (uid === 'legacy');
+            const isMe = uid === currentUser.uid;
             const colorClass = isMe ? 'alignment-bar-sister' : 'alignment-bar-me';
             const barClass = level === 0 ? 'alignment-chart-bar empty' : ('alignment-chart-bar ' + colorClass + (day.isToday ? ' today' : ''));
             barsHtml += '<div class="alignment-chart-bar-wrap"><div class="' + barClass + '" style="height:' + (level > 0 ? heightPct + '%' : '2px') + '"></div></div>';
