@@ -1804,6 +1804,7 @@ function initSpace() {
     if (spacePhotosUnsub) spacePhotosUnsub();
     spacePhotosUnsub = db.collection('spacePhotos').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
         spacePhotos = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderSpaceAlbums();
         if (currentAlbumId) renderSpacePhotoGrid();
     });
 }
@@ -2080,11 +2081,18 @@ async function spaceGenerate() {
                             ...spaceRefImages.map(img => ({
                                 inlineData: { mimeType: img.mimeType, data: img.data }
                             })),
-                            { text: 'Generate a high quality, photorealistic 2K resolution image: ' + prompt + (spaceRefImages.length > 0 ? ' Use the attached reference images to inform the characters, style, and visual details.' : '') }
+                            { text: prompt + (spaceRefImages.length > 0 ? ' Use the attached reference images to inform the characters, style, and visual details.' : '') }
                         ]
                     }],
                     generationConfig: {
-                        responseModalities: ['TEXT', 'IMAGE']
+                        responseModalities: ['TEXT', 'IMAGE'],
+                        thinkingConfig: {
+                            thinkingLevel: 'HIGH',
+                            includeThoughts: true
+                        },
+                        imageConfig: {
+                            imageSize: '2K'
+                        }
                     }
                 })
             }
@@ -2123,8 +2131,9 @@ async function spaceGenerate() {
                     const parts = chunk.candidates[0].content.parts || [];
                     for (const part of parts) {
                         if (part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')) {
-                            // Check if this is a thought image (has thought_signature) or final
-                            if (part.thoughtSignature || part.thought_signature) {
+                            // Check if this is a thought image (marked by thought flag or thought_signature)
+                            const isThought = part.thought || part.thoughtSignature || part.thought_signature;
+                            if (isThought) {
                                 // This is a thinking/interim image — show as preview
                                 thoughtImageCount++;
                                 document.getElementById('spaceGenThinkingImg').src = 'data:' + part.inlineData.mimeType + ';base64,' + part.inlineData.data;
