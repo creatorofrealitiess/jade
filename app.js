@@ -1894,29 +1894,55 @@ function renderSpaceAlbums() {
         const isDefault = card.dataset.isDefault === 'true';
         let pressTimer = null;
         let didLongPress = false;
+        let didScroll = false;
+        let touchStartY = 0;
 
-        const startPress = () => {
+        const startPress = (startY) => {
             didLongPress = false;
+            didScroll = false;
+            touchStartY = startY || 0;
             pressTimer = setTimeout(() => {
                 didLongPress = true;
-                showAlbumContextMenu(albumId, isDefault);
+                showAlbumContextMenu(albumId);
             }, 600);
         };
 
         const cancelPress = () => { clearTimeout(pressTimer); };
 
-        card.addEventListener('mousedown', startPress);
-        card.addEventListener('mouseup', () => { cancelPress(); if (!didLongPress) spaceOpenAlbum(albumId); });
-        card.addEventListener('mouseleave', cancelPress);
-        card.addEventListener('touchstart', startPress, { passive: true });
-        card.addEventListener('touchend', (e) => { cancelPress(); if (!didLongPress) { e.preventDefault(); spaceOpenAlbum(albumId); } });
-        card.addEventListener('touchmove', cancelPress);
-
-        // Desktop: right-click
+        // Prevent iOS native long-press image menu on album covers
         card.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            showAlbumContextMenu(albumId, isDefault);
+            // On desktop, show our custom menu
+            if (!('ontouchstart' in window)) {
+                showAlbumContextMenu(albumId);
+            }
         });
+
+        // Touch events (mobile)
+        card.addEventListener('touchstart', (e) => {
+            startPress(e.touches[0].clientY);
+        }, { passive: true });
+
+        card.addEventListener('touchmove', (e) => {
+            // If finger moved more than 10px, it's a scroll not a tap
+            if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
+                didScroll = true;
+                cancelPress();
+            }
+        });
+
+        card.addEventListener('touchend', (e) => {
+            cancelPress();
+            if (!didLongPress && !didScroll) {
+                e.preventDefault();
+                spaceOpenAlbum(albumId);
+            }
+        });
+
+        // Mouse events (desktop)
+        card.addEventListener('mousedown', () => { startPress(); });
+        card.addEventListener('mouseup', () => { cancelPress(); if (!didLongPress) spaceOpenAlbum(albumId); });
+        card.addEventListener('mouseleave', cancelPress);
     });
 }
 
@@ -2352,9 +2378,10 @@ async function spaceCreateAlbum() {
 }
 
 // ── Album Context Menu (long-press / right-click) ──
-function showAlbumContextMenu(albumId, isDefault) {
+function showAlbumContextMenu(albumId) {
     const album = spaceAlbums.find(a => a.id === albumId);
     if (!album) return;
+    const isDefault = album.isDefault === true;
 
     // Build menu options
     const menuEl = document.getElementById('albumContextMenu');
