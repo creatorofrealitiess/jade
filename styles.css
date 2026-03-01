@@ -1552,21 +1552,22 @@ body::after {
 
 .photo-lightbox-close {
     position: absolute;
-    top: calc(12px + var(--safe-top, 0px));
-    right: 12px;
+    top: calc(16px + env(safe-area-inset-top, 0px));
+    right: 16px;
     z-index: 201;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    border: none;
-    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.6);
     color: white;
-    font-size: 22px;
+    font-size: 24px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .photo-lightbox-container {
@@ -1576,6 +1577,8 @@ body::after {
     align-items: center;
     justify-content: center;
     overflow: hidden;
+    padding: 60px 8px 20px;
+    box-sizing: border-box;
 }
 
 .photo-lightbox-container img {
@@ -1586,6 +1589,7 @@ body::after {
     transition: transform 0.15s ease;
     user-select: none;
     -webkit-user-select: none;
+    pointer-events: none;
 }
 
 .space-photo-detail-caption {

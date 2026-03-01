@@ -1939,8 +1939,15 @@ function openPhotoLightbox() {
 }
 
 function closePhotoLightbox(e) {
-    if (e && e.target !== e.currentTarget && !e.target.classList.contains('photo-lightbox-close')) return;
-    document.getElementById('photoLightbox').classList.remove('visible');
+    // Always close if clicking the X button
+    if (e && e.target && e.target.classList.contains('photo-lightbox-close')) {
+        document.getElementById('photoLightbox').classList.remove('visible');
+        return;
+    }
+    // Close if tapping background area when not zoomed
+    if (!e || lbScale <= 1.1) {
+        document.getElementById('photoLightbox').classList.remove('visible');
+    }
 }
 
 function lbUpdateTransform() {
@@ -1948,16 +1955,27 @@ function lbUpdateTransform() {
     img.style.transform = 'scale(' + lbScale + ') translate(' + (lbTranslateX / lbScale) + 'px, ' + (lbTranslateY / lbScale) + 'px)';
 }
 
-// Double-tap to zoom
+// Double-tap to zoom, single-tap to close when not zoomed
+let lbTapTimeout = null;
 document.getElementById('lightboxContainer').addEventListener('touchend', (e) => {
+    lbIsPanning = false;
+    if (e.touches.length > 0) return; // Still have fingers down
+    
+    // Snap back if zoomed out
+    if (lbScale <= 1.05) {
+        lbScale = 1; lbTranslateX = 0; lbTranslateY = 0;
+        lbUpdateTransform();
+    }
+    
     const now = Date.now();
     if (now - lbLastTap < 300) {
+        // Double tap
+        clearTimeout(lbTapTimeout);
         e.preventDefault();
         if (lbScale > 1.1) {
             lbScale = 1; lbTranslateX = 0; lbTranslateY = 0;
         } else {
             lbScale = 3;
-            // Zoom toward tap position
             const rect = document.getElementById('lightboxContainer').getBoundingClientRect();
             const touch = e.changedTouches[0];
             lbTranslateX = (rect.width / 2 - touch.clientX) * 0.5;
@@ -1967,8 +1985,16 @@ document.getElementById('lightboxContainer').addEventListener('touchend', (e) =>
         img.style.transition = 'transform 0.25s ease';
         lbUpdateTransform();
         setTimeout(() => { img.style.transition = 'transform 0.15s ease'; }, 250);
+        lbLastTap = 0;
+    } else {
+        // Possible single tap — wait to see if double tap follows
+        lbLastTap = now;
+        lbTapTimeout = setTimeout(() => {
+            if (lbScale <= 1.1) {
+                closePhotoLightbox();
+            }
+        }, 300);
     }
-    lbLastTap = now;
 });
 
 // Pinch to zoom + pan
@@ -2000,13 +2026,9 @@ document.getElementById('lightboxContainer').addEventListener('touchmove', (e) =
     }
 }, { passive: false });
 
-document.getElementById('lightboxContainer').addEventListener('touchend', (e) => {
+// Reset pan state when fingers lift
+document.getElementById('lightboxContainer').addEventListener('touchcancel', () => {
     lbIsPanning = false;
-    // Snap back if zoomed out
-    if (lbScale <= 1.05) {
-        lbScale = 1; lbTranslateX = 0; lbTranslateY = 0;
-        lbUpdateTransform();
-    }
 });
 
 // Mouse wheel zoom for desktop
