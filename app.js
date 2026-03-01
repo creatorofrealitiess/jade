@@ -1941,7 +1941,8 @@ function lbApply() {
     const container = document.getElementById('lightboxContainer');
     let pinchStartDist = 0, pinchStartScale = 1;
     let panStartX = 0, panStartY = 0, panStartPosX = 0, panStartPosY = 0;
-    let mode = ''; // 'pinch' or 'pan'
+    let mode = ''; // 'pinch', 'pan', or 'tap'
+    let moved = false;
 
     container.addEventListener('touchstart', (e) => {
         e.preventDefault();
@@ -1952,12 +1953,13 @@ function lbApply() {
                 e.touches[0].clientY - e.touches[1].clientY
             );
             pinchStartScale = lbScale;
-        } else if (e.touches.length === 1 && lbScale > 1) {
-            mode = 'pan';
+        } else if (e.touches.length === 1) {
+            mode = lbScale > 1 ? 'pan' : 'tap';
             panStartX = e.touches[0].clientX;
             panStartY = e.touches[0].clientY;
             panStartPosX = lbPosX;
             panStartPosY = lbPosY;
+            moved = false;
         }
     }, { passive: false });
 
@@ -1971,9 +1973,16 @@ function lbApply() {
             lbScale = Math.min(Math.max(pinchStartScale * (dist / pinchStartDist), 1), 8);
             lbApply();
         } else if (e.touches.length === 1 && mode === 'pan' && lbScale > 1) {
-            lbPosX = panStartPosX + (e.touches[0].clientX - panStartX);
-            lbPosY = panStartPosY + (e.touches[0].clientY - panStartY);
+            const dx = e.touches[0].clientX - panStartX;
+            const dy = e.touches[0].clientY - panStartY;
+            if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
+            lbPosX = panStartPosX + dx;
+            lbPosY = panStartPosY + dy;
             lbApply();
+        } else if (e.touches.length === 1 && mode === 'tap') {
+            const dx = Math.abs(e.touches[0].clientX - panStartX);
+            const dy = Math.abs(e.touches[0].clientY - panStartY);
+            if (dx > 10 || dy > 10) moved = true;
         }
     }, { passive: false });
 
@@ -1985,14 +1994,28 @@ function lbApply() {
             panStartY = e.touches[0].clientY;
             panStartPosX = lbPosX;
             panStartPosY = lbPosY;
+            moved = false;
             return;
         }
         if (e.touches.length === 0) {
-            mode = '';
+            // Snap back if barely zoomed
             if (lbScale <= 1.05) {
                 lbScale = 1; lbPosX = 0; lbPosY = 0;
                 lbApply();
             }
+
+            // Tap without moving
+            if (!moved) {
+                if (lbScale > 1.05) {
+                    // Zoomed in: tap resets to default view
+                    lbScale = 1; lbPosX = 0; lbPosY = 0;
+                    lbApply();
+                } else {
+                    // Not zoomed: tap closes lightbox
+                    closePhotoLightbox();
+                }
+            }
+            mode = '';
         }
     });
 
@@ -2003,13 +2026,15 @@ function lbApply() {
         lbScale = Math.min(Math.max(lbScale * factor, 1), 8);
         if (lbScale <= 1.05) { lbPosX = 0; lbPosY = 0; }
         lbApply();
+        container.style.cursor = lbScale > 1 ? 'grab' : '';
     }, { passive: false });
 
     // Desktop: click-and-drag to pan when zoomed
-    let mouseDown = false, mouseStartX = 0, mouseStartY = 0, mousePosX = 0, mousePosY = 0;
+    let mouseDown = false, mouseStartX = 0, mouseStartY = 0, mousePosX = 0, mousePosY = 0, mouseMoved = false;
     container.addEventListener('mousedown', (e) => {
         if (lbScale > 1) {
             mouseDown = true;
+            mouseMoved = false;
             mouseStartX = e.clientX;
             mouseStartY = e.clientY;
             mousePosX = lbPosX;
@@ -2020,6 +2045,7 @@ function lbApply() {
     });
     container.addEventListener('mousemove', (e) => {
         if (mouseDown) {
+            mouseMoved = true;
             lbPosX = mousePosX + (e.clientX - mouseStartX);
             lbPosY = mousePosY + (e.clientY - mouseStartY);
             lbApply();
