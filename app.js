@@ -1941,6 +1941,90 @@ document.getElementById('spacePhotoUpload').addEventListener('change', async (e)
     e.target.value = '';
 });
 
+// ── Paste Photo to Album ──
+async function spacePastePhoto() {
+    if (!currentAlbumId) return;
+
+    try {
+        const clipboardItems = await navigator.clipboard.read();
+        let found = false;
+
+        for (const item of clipboardItems) {
+            const imageType = item.types.find(t => t.startsWith('image/'));
+            if (!imageType) continue;
+
+            found = true;
+            const blob = await item.getType(imageType);
+
+            if (blob.size > 10 * 1024 * 1024) {
+                alert('Image is too large (max 10MB)');
+                return;
+            }
+
+            try {
+                const photoId = 'space_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                const ref = storage.ref('space/' + photoId);
+                await ref.put(blob);
+                const url = await ref.getDownloadURL();
+
+                await db.collection('spacePhotos').add({
+                    url, albumId: currentAlbumId,
+                    caption: '', source: 'uploaded',
+                    authorId: currentUser.uid, authorName: currentUserName,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            } catch (err) {
+                alert('Upload failed: ' + err.message);
+            }
+            break;
+        }
+
+        if (!found) {
+            alert('No image found in clipboard.');
+        }
+    } catch (err) {
+        alert('Could not paste: ' + (err.message || 'clipboard access denied.'));
+    }
+}
+
+// Ctrl+V / Cmd+V paste support when viewing an album
+document.addEventListener('paste', async (e) => {
+    // Only handle if we're in album view (not in a modal or text input)
+    if (!currentAlbumId) return;
+    if (document.getElementById('spaceAlbumView').style.display === 'none') return;
+    if (document.getElementById('spaceGenerateModal').classList.contains('visible')) return;
+    const tag = document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+    const items = Array.from(e.clipboardData.items);
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+    if (!imageItem) return;
+
+    e.preventDefault();
+    const blob = imageItem.getAsFile();
+
+    if (blob.size > 10 * 1024 * 1024) {
+        alert('Image is too large (max 10MB)');
+        return;
+    }
+
+    try {
+        const photoId = 'space_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        const ref = storage.ref('space/' + photoId);
+        await ref.put(blob);
+        const url = await ref.getDownloadURL();
+
+        await db.collection('spacePhotos').add({
+            url, albumId: currentAlbumId,
+            caption: '', source: 'uploaded',
+            authorId: currentUser.uid, authorName: currentUserName,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (err) {
+        alert('Upload failed: ' + err.message);
+    }
+});
+
 // ── Caption Edit ──
 function spaceEditCaption() {
     const photo = spacePhotos.find(p => p.id === currentPhotoId);
