@@ -1913,6 +1913,118 @@ function spaceOpenPhoto(photoId) {
     document.getElementById('spacePhotoDetail').style.display = 'block';
 }
 
+// ── Photo Lightbox (pinch-to-zoom) ──
+let lbScale = 1;
+let lbTranslateX = 0;
+let lbTranslateY = 0;
+let lbStartDist = 0;
+let lbStartScale = 1;
+let lbLastTap = 0;
+let lbIsPanning = false;
+let lbStartX = 0;
+let lbStartY = 0;
+let lbStartTX = 0;
+let lbStartTY = 0;
+
+function openPhotoLightbox() {
+    const photo = spacePhotos.find(p => p.id === currentPhotoId);
+    if (!photo) return;
+
+    lbScale = 1; lbTranslateX = 0; lbTranslateY = 0;
+    const img = document.getElementById('lightboxImg');
+    img.src = photo.url;
+    img.style.transform = 'scale(1) translate(0px, 0px)';
+
+    document.getElementById('photoLightbox').classList.add('visible');
+}
+
+function closePhotoLightbox(e) {
+    if (e && e.target !== e.currentTarget && !e.target.classList.contains('photo-lightbox-close')) return;
+    document.getElementById('photoLightbox').classList.remove('visible');
+}
+
+function lbUpdateTransform() {
+    const img = document.getElementById('lightboxImg');
+    img.style.transform = 'scale(' + lbScale + ') translate(' + (lbTranslateX / lbScale) + 'px, ' + (lbTranslateY / lbScale) + 'px)';
+}
+
+// Double-tap to zoom
+document.getElementById('lightboxContainer').addEventListener('touchend', (e) => {
+    const now = Date.now();
+    if (now - lbLastTap < 300) {
+        e.preventDefault();
+        if (lbScale > 1.1) {
+            lbScale = 1; lbTranslateX = 0; lbTranslateY = 0;
+        } else {
+            lbScale = 3;
+            // Zoom toward tap position
+            const rect = document.getElementById('lightboxContainer').getBoundingClientRect();
+            const touch = e.changedTouches[0];
+            lbTranslateX = (rect.width / 2 - touch.clientX) * 0.5;
+            lbTranslateY = (rect.height / 2 - touch.clientY) * 0.5;
+        }
+        const img = document.getElementById('lightboxImg');
+        img.style.transition = 'transform 0.25s ease';
+        lbUpdateTransform();
+        setTimeout(() => { img.style.transition = 'transform 0.15s ease'; }, 250);
+    }
+    lbLastTap = now;
+});
+
+// Pinch to zoom + pan
+document.getElementById('lightboxContainer').addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+        e.preventDefault();
+        lbStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        lbStartScale = lbScale;
+    } else if (e.touches.length === 1 && lbScale > 1) {
+        lbIsPanning = true;
+        lbStartX = e.touches[0].clientX;
+        lbStartY = e.touches[0].clientY;
+        lbStartTX = lbTranslateX;
+        lbStartTY = lbTranslateY;
+    }
+}, { passive: false });
+
+document.getElementById('lightboxContainer').addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+        e.preventDefault();
+        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        lbScale = Math.min(Math.max(lbStartScale * (dist / lbStartDist), 1), 8);
+        lbUpdateTransform();
+    } else if (e.touches.length === 1 && lbIsPanning) {
+        e.preventDefault();
+        lbTranslateX = lbStartTX + (e.touches[0].clientX - lbStartX);
+        lbTranslateY = lbStartTY + (e.touches[0].clientY - lbStartY);
+        lbUpdateTransform();
+    }
+}, { passive: false });
+
+document.getElementById('lightboxContainer').addEventListener('touchend', (e) => {
+    lbIsPanning = false;
+    // Snap back if zoomed out
+    if (lbScale <= 1.05) {
+        lbScale = 1; lbTranslateX = 0; lbTranslateY = 0;
+        lbUpdateTransform();
+    }
+});
+
+// Mouse wheel zoom for desktop
+document.getElementById('lightboxContainer').addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    lbScale = Math.min(Math.max(lbScale * delta, 1), 8);
+    if (lbScale <= 1.05) { lbTranslateX = 0; lbTranslateY = 0; }
+    lbUpdateTransform();
+}, { passive: false });
+
+// Escape key to close
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && document.getElementById('photoLightbox').classList.contains('visible')) {
+        closePhotoLightbox();
+    }
+});
+
 // ── Photo Upload ──
 document.getElementById('spacePhotoUpload').addEventListener('change', async (e) => {
     const files = Array.from(e.target.files);

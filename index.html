@@ -368,7 +368,7 @@
                 <!-- PHOTO DETAIL VIEW -->
                 <div id="spacePhotoDetail" style="display:none">
                     <div class="space-photo-detail">
-                        <img id="spacePhotoDetailImg" src="">
+                        <img id="spacePhotoDetailImg" src="" onclick="openPhotoLightbox()">
                         <div class="space-photo-detail-caption" id="spacePhotoDetailCaption"></div>
                         <div class="space-photo-detail-meta" id="spacePhotoDetailMeta"></div>
                         <div class="space-photo-detail-actions">
@@ -376,6 +376,14 @@
                             <button class="btn-secondary btn-sm" onclick="spaceMovePhoto()">Move to Album</button>
                             <button class="btn-danger btn-sm" onclick="spaceDeletePhoto()">Delete</button>
                         </div>
+                    </div>
+                </div>
+
+                <!-- PHOTO LIGHTBOX (fullscreen zoom) -->
+                <div id="photoLightbox" class="photo-lightbox" onclick="closePhotoLightbox(event)">
+                    <button class="photo-lightbox-close" onclick="closePhotoLightbox()">&times;</button>
+                    <div class="photo-lightbox-container" id="lightboxContainer">
+                        <img id="lightboxImg" src="" draggable="false">
                     </div>
                 </div>
 
