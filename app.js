@@ -1270,16 +1270,20 @@ function anchorsTab(tab) {
 }
 
 // ── Playlists ──
-function extractSpotifyId(url) {
-    // Handle various Spotify URL formats
+function extractSpotifyInfo(url) {
+    // Handle track, album, and playlist URLs
     const patterns = [
-        /spotify\.com\/playlist\/([a-zA-Z0-9]+)/,
-        /spotify\.com\/embed\/playlist\/([a-zA-Z0-9]+)/,
-        /spotify:playlist:([a-zA-Z0-9]+)/
+        { type: 'track', regex: /spotify\.com\/track\/([a-zA-Z0-9]+)/ },
+        { type: 'track', regex: /spotify:track:([a-zA-Z0-9]+)/ },
+        { type: 'album', regex: /spotify\.com\/album\/([a-zA-Z0-9]+)/ },
+        { type: 'album', regex: /spotify:album:([a-zA-Z0-9]+)/ },
+        { type: 'playlist', regex: /spotify\.com\/playlist\/([a-zA-Z0-9]+)/ },
+        { type: 'playlist', regex: /spotify\.com\/embed\/playlist\/([a-zA-Z0-9]+)/ },
+        { type: 'playlist', regex: /spotify:playlist:([a-zA-Z0-9]+)/ },
     ];
     for (const p of patterns) {
-        const m = url.match(p);
-        if (m) return m[1];
+        const m = url.match(p.regex);
+        if (m) return { type: p.type, id: m[1] };
     }
     return null;
 }
@@ -1291,12 +1295,13 @@ function addPlaylist() {
     const name = nameInput.value.trim();
 
     if (!url) return;
-    const playlistId = extractSpotifyId(url);
-    if (!playlistId) { alert('Please paste a valid Spotify playlist URL'); return; }
+    const info = extractSpotifyInfo(url);
+    if (!info) { alert('Please paste a valid Spotify URL (song, album, or playlist)'); return; }
 
     anchorsData.playlists.push({
-        id: playlistId,
-        name: name || 'Untitled Playlist',
+        id: info.id,
+        type: info.type,
+        name: name || 'Untitled',
         addedBy: currentUserName,
         addedAt: Date.now()
     });
@@ -1313,26 +1318,28 @@ function removePlaylist(idx) {
 function renderPlaylists() {
     const container = document.getElementById('playlistsList');
     if (anchorsData.playlists.length === 0) {
-        container.innerHTML = '<div class="empty-state" style="padding:var(--space-xl) 0"><div class="empty-state-icon">&#127925;</div><p>No playlists yet. Paste a Spotify URL to add your first anchor.</p></div>';
+        container.innerHTML = '<div class="empty-state" style="padding:var(--space-xl) 0"><div class="empty-state-icon">&#127925;</div><p>No music yet. Paste a Spotify URL to add a song, album, or playlist.</p></div>';
         return;
     }
-    container.innerHTML = anchorsData.playlists.map((pl, i) =>
-        '<div class="anchor-card playlist-card">' +
+    container.innerHTML = anchorsData.playlists.map((pl, i) => {
+        const embedType = pl.type || 'playlist';
+        const embedHeight = embedType === 'track' ? '80' : '152';
+        return '<div class="anchor-card playlist-card">' +
             '<div class="anchor-card-header">' +
                 '<div><div class="anchor-card-title">' + escapeHtml(pl.name) + '</div>' +
                 '<div class="anchor-card-meta">added by ' + escapeHtml(pl.addedBy || 'unknown') + '</div></div>' +
                 '<div style="display:flex;gap:4px;align-items:center">' +
-                    '<button class="btn-secondary btn-sm" onclick="playInMiniPlayer(\'' + pl.id + '\', \'' + escapeHtml(pl.name).replace(/'/g, "\\'") + '\')" style="padding:4px 12px;font-size:12px">&#9654; Play</button>' +
+                    '<button class="btn-secondary btn-sm" onclick="playInMiniPlayer(\'' + pl.id + '\', \'' + escapeHtml(pl.name).replace(/'/g, "\\'") + '\', \'' + embedType + '\')" style="padding:4px 12px;font-size:12px">&#9654; Play</button>' +
                     '<button class="affirmation-delete-btn" onclick="removePlaylist(' + i + ')" title="Remove">&times;</button>' +
                 '</div>' +
             '</div>' +
             '<div class="playlist-embed">' +
-                '<iframe src="https://open.spotify.com/embed/playlist/' + pl.id + '?utm_source=generator&theme=0" ' +
-                'width="100%" height="152" frameBorder="0" allowfullscreen="" ' +
+                '<iframe src="https://open.spotify.com/embed/' + embedType + '/' + pl.id + '?utm_source=generator&theme=0" ' +
+                'width="100%" height="' + embedHeight + '" frameBorder="0" allowfullscreen="" ' +
                 'allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>' +
             '</div>' +
-        '</div>'
-    ).join('');
+        '</div>';
+    }).join('');
 }
 
 // ── Colour Palettes ──
@@ -3006,13 +3013,14 @@ async function timelineDelete() {
 
 let miniPlayerActive = false;
 
-function playInMiniPlayer(playlistId, name) {
+function playInMiniPlayer(id, name, type) {
     const player = document.getElementById('miniPlayer');
     const embed = document.getElementById('miniPlayerEmbed');
     const nameEl = document.getElementById('miniPlayerName');
+    const embedType = type || 'playlist';
 
     nameEl.textContent = name || 'Now Playing';
-    embed.innerHTML = '<iframe src="https://open.spotify.com/embed/playlist/' + playlistId + '?utm_source=generator&theme=0" ' +
+    embed.innerHTML = '<iframe src="https://open.spotify.com/embed/' + embedType + '/' + id + '?utm_source=generator&theme=0" ' +
         'width="100%" height="152" frameBorder="0" allowfullscreen="" ' +
         'allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"></iframe>';
 
