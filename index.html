@@ -380,8 +380,10 @@
                 </div>
 
                 <!-- PHOTO LIGHTBOX (fullscreen zoom) -->
-                <div id="photoLightbox" class="photo-lightbox" onclick="closePhotoLightbox(event)">
-                    <button class="photo-lightbox-close" onclick="closePhotoLightbox()">&times;</button>
+                <div id="photoLightbox" class="photo-lightbox">
+                    <div class="photo-lightbox-topbar">
+                        <button class="photo-lightbox-close">&times;</button>
+                    </div>
                     <div class="photo-lightbox-container" id="lightboxContainer">
                         <img id="lightboxImg" src="" draggable="false">
                     </div>

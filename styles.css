@@ -1543,6 +1543,9 @@ body::after {
     background: black;
     flex-direction: column;
     touch-action: none;
+    overflow: hidden;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
 }
 
 .photo-lightbox.visible {
@@ -1590,6 +1593,9 @@ body::after {
     user-select: none;
     -webkit-user-select: none;
     -webkit-touch-callout: none;
+    will-change: transform;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
 }
 
 .space-photo-detail-caption {
