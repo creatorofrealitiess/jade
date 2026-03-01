@@ -2013,6 +2013,33 @@ body::after {
 .palette-colour-input::-webkit-color-swatch { border: none; border-radius: 4px; }
 
 /* Scent cards */
+/* Sense type selector */
+.senses-type-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.sense-type-btn {
+    flex: 1;
+    min-width: 0;
+    padding: 6px 4px;
+    border: var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.sense-type-btn.active {
+    background: var(--jade-primary);
+    color: white;
+    border-color: var(--jade-primary);
+}
+
 .scent-body {
     font-family: var(--font-display);
     font-size: 15px;

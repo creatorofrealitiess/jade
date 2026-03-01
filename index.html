@@ -104,7 +104,7 @@
                     <a class="feature-card" data-page="messenger" data-accent="sky"><span class="feature-card-icon">&#128172;</span><div class="feature-card-title">Messenger</div><div class="feature-card-desc">Talk as your Jade selves</div></a>
                     <a class="feature-card" data-page="gallery" data-accent="honey"><span class="feature-card-icon">&#127912;</span><div class="feature-card-title">Scene Builder</div><div class="feature-card-desc">Create memories &amp; vignettes</div></a>
                     <a class="feature-card" data-page="timeline" data-accent="lavender"><span class="feature-card-icon">&#10024;</span><div class="feature-card-title">Timeline</div><div class="feature-card-desc">The story of your life in Jade</div></a>
-                    <a class="feature-card full-width" data-page="anchors" data-accent="rose"><span class="feature-card-icon float-gentle">&#128367;&#65039;</span><div class="feature-card-title">Sensory Anchors</div><div class="feature-card-desc">Playlists, palettes, scents &mdash; everything that pulls you into the state</div></a>
+                    <a class="feature-card full-width" data-page="anchors" data-accent="rose"><span class="feature-card-icon float-gentle">&#128367;&#65039;</span><div class="feature-card-title">Sensory Anchors</div><div class="feature-card-desc">Playlists, palettes, senses &mdash; everything that pulls you into the state</div></a>
                 </div>
                 <div class="botanical-accent">&#10086; &#10086; &#10086;</div>
             </div>
@@ -637,13 +637,13 @@ You are already there."></textarea>
             <!-- ANCHORS -->
             <div class="page" id="page-anchors">
                 <div class="section-header"><button class="back-btn" onclick="nav('home')">&larr;</button><h2>Sensory Anchors</h2></div>
-                <p class="anchors-intro">The sensory threads that pull you into Jade instantly. A playlist, a colour, a scent &mdash; and you&rsquo;re there.</p>
+                <p class="anchors-intro">The sensory threads that pull you into Jade instantly. A song, a colour, a sense &mdash; and you&rsquo;re there.</p>
 
                 <!-- TABS -->
                 <div class="anchors-tabs">
                     <button class="anchors-tab active" data-tab="playlists" onclick="anchorsTab('playlists')">&#127925; Playlists</button>
                     <button class="anchors-tab" data-tab="palettes" onclick="anchorsTab('palettes')">&#127912; Palettes</button>
-                    <button class="anchors-tab" data-tab="scents" onclick="anchorsTab('scents')">&#128367;&#65039; Scents</button>
+                    <button class="anchors-tab" data-tab="scents" onclick="anchorsTab('scents')">&#10024; Senses</button>
                 </div>
 
                 <!-- PLAYLISTS TAB -->
@@ -672,12 +672,19 @@ You are already there."></textarea>
                     <div id="palettesList" class="anchors-list"></div>
                 </div>
 
-                <!-- SCENTS TAB -->
+                <!-- SENSES TAB -->
                 <div class="anchors-panel" id="anchorsPanel-scents">
                     <div class="anchors-add-area">
-                        <input class="auth-input" id="scentTitleInput" placeholder="Name this scent... (e.g. After the Rain)" style="width:100%">
-                        <textarea class="auth-input" id="scentBodyInput" placeholder="Describe it... petrichor on warm stone, wild thyme from the garden path..." rows="3" style="width:100%;margin-top:var(--space-sm);resize:none"></textarea>
-                        <button class="btn-primary btn-sm" onclick="addScent()" style="margin-top:var(--space-sm)">Add Scent</button>
+                        <div class="senses-type-row">
+                            <button class="sense-type-btn active" data-sense="smell" onclick="selectSenseType(this)">👃🏽 Smell</button>
+                            <button class="sense-type-btn" data-sense="sound" onclick="selectSenseType(this)">👂🏽 Sound</button>
+                            <button class="sense-type-btn" data-sense="touch" onclick="selectSenseType(this)">🤲🏽 Touch</button>
+                            <button class="sense-type-btn" data-sense="taste" onclick="selectSenseType(this)">👅 Taste</button>
+                            <button class="sense-type-btn" data-sense="sight" onclick="selectSenseType(this)">👁 Sight</button>
+                        </div>
+                        <input class="auth-input" id="scentTitleInput" placeholder="Name this sense..." style="width:100%;margin-top:var(--space-sm)">
+                        <textarea class="auth-input" id="scentBodyInput" placeholder="Describe it vividly..." rows="3" style="width:100%;margin-top:var(--space-sm);resize:none"></textarea>
+                        <button class="btn-primary btn-sm" onclick="addScent()" style="margin-top:var(--space-sm)">Add Sense</button>
                     </div>
                     <div id="scentsList" class="anchors-list"></div>
                 </div>

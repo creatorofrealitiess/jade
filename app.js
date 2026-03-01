@@ -1416,7 +1416,17 @@ function copyColour(hex) {
     }).catch(() => {});
 }
 
-// ── Scent Notes ──
+// ── Senses ──
+let selectedSenseType = 'smell';
+
+const senseEmojis = { smell: '👃', sound: '👂', touch: '🤲', taste: '👅', sight: '👁' };
+
+function selectSenseType(btn) {
+    document.querySelectorAll('.sense-type-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedSenseType = btn.dataset.sense;
+}
+
 function addScent() {
     const titleInput = document.getElementById('scentTitleInput');
     const bodyInput = document.getElementById('scentBodyInput');
@@ -1427,7 +1437,7 @@ function addScent() {
     anchorsData.scents.push({
         title: title || 'Untitled',
         body: body || '',
-        addedBy: currentUserName,
+        sense: selectedSenseType,
         addedAt: Date.now()
     });
     saveAnchors();
@@ -1443,19 +1453,20 @@ function removeScent(idx) {
 function renderScents() {
     const container = document.getElementById('scentsList');
     if (anchorsData.scents.length === 0) {
-        container.innerHTML = '<div class="empty-state" style="padding:var(--space-xl) 0"><div class="empty-state-icon">&#128367;&#65039;</div><p>No scent notes yet. Describe the scents that bring you home.</p></div>';
+        container.innerHTML = '<div class="empty-state" style="padding:var(--space-xl) 0"><div class="empty-state-icon">&#10024;</div><p>No senses yet. Describe what you experience in Jade.</p></div>';
         return;
     }
-    container.innerHTML = anchorsData.scents.map((s, i) =>
-        '<div class="anchor-card scent-card">' +
+    container.innerHTML = anchorsData.scents.map((s, i) => {
+        const label = s.sense ? s.sense.charAt(0).toUpperCase() + s.sense.slice(1) : 'Smell';
+        return '<div class="anchor-card scent-card">' +
             '<div class="anchor-card-header">' +
                 '<div><div class="anchor-card-title">' + escapeHtml(s.title) + '</div>' +
-                '<div class="anchor-card-meta">by ' + escapeHtml(s.addedBy || 'unknown') + '</div></div>' +
+                '<div class="anchor-card-meta">' + label + '</div></div>' +
                 '<button class="affirmation-delete-btn" onclick="removeScent(' + i + ')" title="Remove">&times;</button>' +
             '</div>' +
             (s.body ? '<p class="scent-body">' + escapeHtml(s.body) + '</p>' : '') +
-        '</div>'
-    ).join('');
+        '</div>';
+    }).join('');
 }
 
 // ═══════ WORLD / LOCATIONS (Firestore synced) ═══════
