@@ -1849,7 +1849,7 @@ function spaceShowAlbums() {
     document.getElementById('spaceAlbumView').style.display = 'none';
     document.getElementById('spacePhotoDetail').style.display = 'none';
     document.getElementById('spaceAddAlbumBtn').style.display = 'flex';
-    document.getElementById('spaceTitle').textContent = 'Our Space';
+    document.getElementById('spaceTitle').textContent = 'Life';
     currentAlbumId = null; currentPhotoId = null;
 }
 
