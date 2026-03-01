@@ -1913,134 +1913,133 @@ function spaceOpenPhoto(photoId) {
     document.getElementById('spacePhotoDetail').style.display = 'block';
 }
 
-// ── Photo Lightbox (pinch-to-zoom) ──
+// ── Photo Lightbox (pinch-to-zoom + double-tap + pan) ──
 let lbScale = 1;
-let lbTranslateX = 0;
-let lbTranslateY = 0;
+let lbPosX = 0;
+let lbPosY = 0;
+let lbPinching = false;
+let lbPanning = false;
 let lbStartDist = 0;
 let lbStartScale = 1;
+let lbPanStartX = 0;
+let lbPanStartY = 0;
+let lbPanStartPosX = 0;
+let lbPanStartPosY = 0;
 let lbLastTap = 0;
-let lbIsPanning = false;
-let lbStartX = 0;
-let lbStartY = 0;
-let lbStartTX = 0;
-let lbStartTY = 0;
+let lbMoved = false;
 
 function openPhotoLightbox() {
     const photo = spacePhotos.find(p => p.id === currentPhotoId);
     if (!photo) return;
 
-    lbScale = 1; lbTranslateX = 0; lbTranslateY = 0;
+    lbScale = 1; lbPosX = 0; lbPosY = 0;
     const img = document.getElementById('lightboxImg');
     img.src = photo.url;
-    img.style.transform = 'scale(1) translate(0px, 0px)';
+    lbApply();
 
     document.getElementById('photoLightbox').classList.add('visible');
 }
 
-function closePhotoLightbox(e) {
-    // Always close if clicking the X button
-    if (e && e.target && e.target.classList.contains('photo-lightbox-close')) {
-        document.getElementById('photoLightbox').classList.remove('visible');
-        return;
-    }
-    // Close if tapping background area when not zoomed
-    if (!e || lbScale <= 1.1) {
-        document.getElementById('photoLightbox').classList.remove('visible');
-    }
+function closePhotoLightbox() {
+    document.getElementById('photoLightbox').classList.remove('visible');
 }
 
-function lbUpdateTransform() {
-    const img = document.getElementById('lightboxImg');
-    img.style.transform = 'scale(' + lbScale + ') translate(' + (lbTranslateX / lbScale) + 'px, ' + (lbTranslateY / lbScale) + 'px)';
+function lbApply() {
+    document.getElementById('lightboxImg').style.transform =
+        'translate(' + lbPosX + 'px, ' + lbPosY + 'px) scale(' + lbScale + ')';
 }
 
-// Double-tap to zoom, single-tap to close when not zoomed
-let lbTapTimeout = null;
-document.getElementById('lightboxContainer').addEventListener('touchend', (e) => {
-    lbIsPanning = false;
-    if (e.touches.length > 0) return; // Still have fingers down
-    
-    // Snap back if zoomed out
-    if (lbScale <= 1.05) {
-        lbScale = 1; lbTranslateX = 0; lbTranslateY = 0;
-        lbUpdateTransform();
-    }
-    
-    const now = Date.now();
-    if (now - lbLastTap < 300) {
-        // Double tap
-        clearTimeout(lbTapTimeout);
-        e.preventDefault();
-        if (lbScale > 1.1) {
-            lbScale = 1; lbTranslateX = 0; lbTranslateY = 0;
-        } else {
-            lbScale = 3;
-            const rect = document.getElementById('lightboxContainer').getBoundingClientRect();
-            const touch = e.changedTouches[0];
-            lbTranslateX = (rect.width / 2 - touch.clientX) * 0.5;
-            lbTranslateY = (rect.height / 2 - touch.clientY) * 0.5;
+function lbReset() {
+    lbScale = 1; lbPosX = 0; lbPosY = 0;
+    lbApply();
+}
+
+function lbGetDist(t) {
+    return Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+}
+
+(function initLightboxTouch() {
+    const el = document.getElementById('lightboxContainer');
+
+    el.addEventListener('touchstart', (e) => {
+        lbMoved = false;
+
+        if (e.touches.length === 2) {
+            e.preventDefault();
+            lbPinching = true;
+            lbPanning = false;
+            lbStartDist = lbGetDist(e.touches);
+            lbStartScale = lbScale;
+        } else if (e.touches.length === 1) {
+            lbPanning = true;
+            lbPanStartX = e.touches[0].clientX;
+            lbPanStartY = e.touches[0].clientY;
+            lbPanStartPosX = lbPosX;
+            lbPanStartPosY = lbPosY;
         }
-        const img = document.getElementById('lightboxImg');
-        img.style.transition = 'transform 0.25s ease';
-        lbUpdateTransform();
-        setTimeout(() => { img.style.transition = 'transform 0.15s ease'; }, 250);
-        lbLastTap = 0;
-    } else {
-        // Possible single tap — wait to see if double tap follows
-        lbLastTap = now;
-        lbTapTimeout = setTimeout(() => {
-            if (lbScale <= 1.1) {
-                closePhotoLightbox();
+    }, { passive: false });
+
+    el.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        lbMoved = true;
+
+        if (e.touches.length === 2 && lbPinching) {
+            const dist = lbGetDist(e.touches);
+            lbScale = Math.min(Math.max(lbStartScale * (dist / lbStartDist), 1), 8);
+            lbApply();
+        } else if (e.touches.length === 1 && lbPanning && lbScale > 1) {
+            lbPosX = lbPanStartPosX + (e.touches[0].clientX - lbPanStartX);
+            lbPosY = lbPanStartPosY + (e.touches[0].clientY - lbPanStartY);
+            lbApply();
+        }
+    }, { passive: false });
+
+    el.addEventListener('touchend', (e) => {
+        lbPinching = false;
+        lbPanning = false;
+
+        // Snap back if barely zoomed
+        if (lbScale <= 1.05) {
+            lbReset();
+        }
+
+        // Double-tap detection (only if finger didn't move)
+        if (e.touches.length === 0 && !lbMoved) {
+            const now = Date.now();
+            if (now - lbLastTap < 300) {
+                // Double tap
+                if (lbScale > 1.1) {
+                    lbScale = 1; lbPosX = 0; lbPosY = 0;
+                } else {
+                    lbScale = 3;
+                    // Zoom toward where they tapped
+                    const rect = el.getBoundingClientRect();
+                    const cx = rect.width / 2;
+                    const cy = rect.height / 2;
+                    const tx = e.changedTouches[0].clientX - rect.left;
+                    const ty = e.changedTouches[0].clientY - rect.top;
+                    lbPosX = (cx - tx) * 2;
+                    lbPosY = (cy - ty) * 2;
+                }
+                lbApply();
+                lbLastTap = 0;
+            } else {
+                lbLastTap = now;
             }
-        }, 300);
-    }
-});
+        }
+    });
 
-// Pinch to zoom + pan
-document.getElementById('lightboxContainer').addEventListener('touchstart', (e) => {
-    if (e.touches.length === 2) {
+    // Mouse wheel zoom for desktop
+    el.addEventListener('wheel', (e) => {
         e.preventDefault();
-        lbStartDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        lbStartScale = lbScale;
-    } else if (e.touches.length === 1 && lbScale > 1) {
-        lbIsPanning = true;
-        lbStartX = e.touches[0].clientX;
-        lbStartY = e.touches[0].clientY;
-        lbStartTX = lbTranslateX;
-        lbStartTY = lbTranslateY;
-    }
-}, { passive: false });
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        lbScale = Math.min(Math.max(lbScale * delta, 1), 8);
+        if (lbScale <= 1.05) { lbPosX = 0; lbPosY = 0; }
+        lbApply();
+    }, { passive: false });
+})();
 
-document.getElementById('lightboxContainer').addEventListener('touchmove', (e) => {
-    if (e.touches.length === 2) {
-        e.preventDefault();
-        const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        lbScale = Math.min(Math.max(lbStartScale * (dist / lbStartDist), 1), 8);
-        lbUpdateTransform();
-    } else if (e.touches.length === 1 && lbIsPanning) {
-        e.preventDefault();
-        lbTranslateX = lbStartTX + (e.touches[0].clientX - lbStartX);
-        lbTranslateY = lbStartTY + (e.touches[0].clientY - lbStartY);
-        lbUpdateTransform();
-    }
-}, { passive: false });
-
-// Reset pan state when fingers lift
-document.getElementById('lightboxContainer').addEventListener('touchcancel', () => {
-    lbIsPanning = false;
-});
-
-// Mouse wheel zoom for desktop
-document.getElementById('lightboxContainer').addEventListener('wheel', (e) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    lbScale = Math.min(Math.max(lbScale * delta, 1), 8);
-    if (lbScale <= 1.05) { lbTranslateX = 0; lbTranslateY = 0; }
-    lbUpdateTransform();
-}, { passive: false });
-
-// Escape key to close
+// Escape to close
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && document.getElementById('photoLightbox').classList.contains('visible')) {
         closePhotoLightbox();
