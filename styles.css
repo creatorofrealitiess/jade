@@ -2325,6 +2325,94 @@ body.mini-player-active .content-area {
     margin-top: var(--space-xs);
 }
 
+.gen-ref-buttons {
+    display: flex;
+    gap: var(--space-sm);
+}
+
+/* ═══════ NANO BANANA MODEL TOGGLE ═══════ */
+.nano-banana-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--card-bg);
+    border-radius: var(--radius-md);
+    border: var(--border-subtle);
+}
+
+.nb-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: color 0.3s ease, opacity 0.3s ease;
+}
+
+.nb-label-left {
+    color: var(--jade-light);
+    font-weight: 500;
+}
+
+.nb-label-right {
+    opacity: 0.5;
+}
+
+.nano-banana-toggle:has(input:checked) .nb-label-left {
+    color: var(--text-muted);
+    font-weight: 400;
+    opacity: 0.5;
+}
+
+.nano-banana-toggle:has(input:checked) .nb-label-right {
+    color: var(--jade-light);
+    font-weight: 500;
+    opacity: 1;
+}
+
+.nb-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+}
+
+.nb-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.nb-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background: var(--jade-dark);
+    border-radius: 24px;
+    transition: background 0.3s ease;
+}
+
+.nb-slider::before {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    left: 3px;
+    bottom: 3px;
+    background: var(--jade-light);
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+}
+
+.nb-switch input:checked + .nb-slider {
+    background: var(--jade-medium);
+}
+
+.nb-switch input:checked + .nb-slider::before {
+    transform: translateX(20px);
+}
+
 /* ═══════ NOTIFICATION PREFERENCES ═══════ */
 .notif-pref-row {
     display: flex;

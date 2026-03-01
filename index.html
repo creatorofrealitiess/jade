@@ -387,12 +387,25 @@
                         </div>
                         <div class="modal-body">
                             <p class="modal-description">Describe what you want to see. You can attach reference images for characters, places, or styles.</p>
+                            
+                            <div class="nano-banana-toggle">
+                                <span class="nb-label nb-label-left" id="nbLabelLeft">Nano Banana 2</span>
+                                <label class="nb-switch">
+                                    <input type="checkbox" id="nanoBananaModelToggle">
+                                    <span class="nb-slider"></span>
+                                </label>
+                                <span class="nb-label nb-label-right" id="nbLabelRight">Pro</span>
+                            </div>
+
                             <textarea class="auth-input" id="spaceGenPrompt" placeholder="A golden retriever sleeping by the stone fireplace in our Jade cottage, warm afternoon light through the window..." rows="4" style="width:100%;resize:none"></textarea>
                             
                             <div class="gen-ref-section">
                                 <label class="gen-ref-label">Reference images</label>
                                 <div class="gen-ref-grid" id="genRefGrid"></div>
-                                <label class="btn-secondary btn-sm gen-ref-add" for="genRefUpload">+ Add Reference</label>
+                                <div class="gen-ref-buttons">
+                                    <label class="btn-secondary btn-sm gen-ref-add" for="genRefUpload">+ Upload</label>
+                                    <button class="btn-secondary btn-sm gen-ref-add" onclick="pasteRefFromClipboard()">&#128203; Paste</button>
+                                </div>
                                 <input type="file" id="genRefUpload" accept="image/*" multiple style="display:none">
                             </div>
 
@@ -665,7 +678,7 @@ You are already there."></textarea>
                 </div>
                 <div class="settings-section">
                     <h3>Gemini API Key</h3>
-                    <p style="font-size:13px;color:var(--jade-medium);margin-bottom:var(--space-md);line-height:1.5">For Nano Banana Pro image generation. Stored only in your browser.</p>
+                    <p style="font-size:13px;color:var(--jade-medium);margin-bottom:var(--space-md);line-height:1.5">For Nano Banana image generation. Stored only in your browser.</p>
                     <input class="auth-input" type="password" id="geminiApiKey" placeholder="Paste your Gemini API key" style="width:100%;margin-bottom:var(--space-sm)">
                     <button class="btn-secondary" onclick="saveGeminiKey()">Save Key</button>
                 </div>
@@ -711,7 +724,7 @@ You are already there."></textarea>
             <button class="nav-item active" data-nav="home"><span class="nav-icon">&#127969;</span><span class="nav-label">Home</span></button>
             <button class="nav-item" data-nav="journal"><span class="nav-icon">&#128214;</span><span class="nav-label">Journal</span></button>
             <button class="nav-item" data-nav="messenger"><span class="nav-icon">&#128172;</span><span class="nav-label">Messages</span></button>
-            <button class="nav-item" data-nav="gallery"><span class="nav-icon">🎨</span><span class="nav-label">Scenes</span></button>
+            <button class="nav-item" data-nav="gallery"><span class="nav-icon">&#127912;</span><span class="nav-label">Scenes</span></button>
             <button class="nav-item" data-nav="settings"><span class="nav-icon">&#10022;</span><span class="nav-label">Settings</span></button>
         </nav>
     </div>

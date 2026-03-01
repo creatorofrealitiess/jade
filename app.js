@@ -1682,6 +1682,62 @@ document.getElementById('genRefUpload').addEventListener('change', (e) => {
     e.target.value = ''; // Reset so same file can be re-added
 });
 
+// Paste from clipboard support for reference images
+async function pasteRefFromClipboard() {
+    try {
+        const clipboardItems = await navigator.clipboard.read();
+        let found = false;
+        for (const item of clipboardItems) {
+            const imageType = item.types.find(t => t.startsWith('image/'));
+            if (imageType) {
+                if (spaceRefImages.length >= 5) {
+                    document.getElementById('spaceGenError').textContent = 'Maximum 5 reference images.';
+                    return;
+                }
+                const blob = await item.getType(imageType);
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    spaceRefImages.push({ data: base64, mimeType: imageType, name: 'pasted-image' });
+                    renderRefGrid();
+                };
+                reader.readAsDataURL(blob);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            document.getElementById('spaceGenError').textContent = 'No image found in clipboard.';
+            setTimeout(() => { document.getElementById('spaceGenError').textContent = ''; }, 3000);
+        }
+    } catch (err) {
+        document.getElementById('spaceGenError').textContent = 'Could not paste: ' + (err.message || 'clipboard access denied.');
+        setTimeout(() => { document.getElementById('spaceGenError').textContent = ''; }, 3000);
+    }
+}
+
+// Also support Ctrl+V / Cmd+V paste on the generate modal
+document.addEventListener('paste', (e) => {
+    const modal = document.getElementById('spaceGenerateModal');
+    if (!modal.classList.contains('visible')) return;
+    
+    const items = Array.from(e.clipboardData.items);
+    const imageItem = items.find(item => item.type.startsWith('image/'));
+    if (!imageItem) return;
+    
+    e.preventDefault();
+    if (spaceRefImages.length >= 5) return;
+    
+    const blob = imageItem.getAsFile();
+    const reader = new FileReader();
+    reader.onload = () => {
+        const base64 = reader.result.split(',')[1];
+        spaceRefImages.push({ data: base64, mimeType: blob.type, name: 'pasted-image' });
+        renderRefGrid();
+    };
+    reader.readAsDataURL(blob);
+});
+
 function renderRefGrid() {
     const grid = document.getElementById('genRefGrid');
     grid.innerHTML = spaceRefImages.map((img, i) => 
@@ -1698,6 +1754,35 @@ function removeRefImage(index) {
 }
 
 function initSpace() {
+    // Model toggle label updates
+    const modelToggle = document.getElementById('nanoBananaModelToggle');
+    if (modelToggle) {
+        // Restore last used model preference
+        const savedModel = localStorage.getItem('jade_nano_banana_model');
+        if (savedModel === 'pro') modelToggle.checked = true;
+        
+        modelToggle.addEventListener('change', () => {
+            const left = document.getElementById('nbLabelLeft');
+            const right = document.getElementById('nbLabelRight');
+            if (modelToggle.checked) {
+                left.style.color = ''; left.style.fontWeight = ''; left.style.opacity = '0.5';
+                right.style.color = 'var(--jade-light)'; right.style.fontWeight = '500'; right.style.opacity = '1';
+                localStorage.setItem('jade_nano_banana_model', 'pro');
+            } else {
+                left.style.color = 'var(--jade-light)'; left.style.fontWeight = '500'; left.style.opacity = '1';
+                right.style.color = ''; right.style.fontWeight = ''; right.style.opacity = '0.5';
+                localStorage.setItem('jade_nano_banana_model', 'flash');
+            }
+        });
+        
+        // Apply initial state
+        if (modelToggle.checked) {
+            document.getElementById('nbLabelLeft').style.opacity = '0.5';
+            document.getElementById('nbLabelRight').style.color = 'var(--jade-light)';
+            document.getElementById('nbLabelRight').style.fontWeight = '500';
+            document.getElementById('nbLabelRight').style.opacity = '1';
+        }
+    }
     // Init default albums if none exist
     const albumsRef = db.collection('spaceAlbums');
     albumsRef.get().then(snapshot => {
@@ -1822,7 +1907,7 @@ function spaceOpenPhoto(photoId) {
     document.getElementById('spacePhotoDetailCaption').style.display = photo.caption ? 'block' : 'none';
 
     const date = photo.createdAt ? new Date(photo.createdAt.seconds * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
-    const source = photo.source === 'generated' ? 'Generated with Nano Banana Pro' : 'Uploaded';
+    const source = photo.source === 'generated' ? ('Generated with ' + (photo.generatedModel || 'Nano Banana Pro')) : 'Uploaded';
     document.getElementById('spacePhotoDetailMeta').textContent = source + (date ? ' · ' + date : '');
 
     document.getElementById('spaceAlbumView').style.display = 'none';
@@ -1954,12 +2039,24 @@ function spaceCloseGenerate() {
     if (spaceGenController) { spaceGenController.abort(); spaceGenController = null; }
 }
 
+function getSelectedNanoBananaModel() {
+    const toggle = document.getElementById('nanoBananaModelToggle');
+    return toggle && toggle.checked ? 'gemini-3-pro-image-preview' : 'gemini-3.1-flash-image-preview';
+}
+
+function getSelectedNanoBananaLabel() {
+    const toggle = document.getElementById('nanoBananaModelToggle');
+    return toggle && toggle.checked ? 'Nano Banana Pro' : 'Nano Banana 2';
+}
+
 async function spaceGenerate() {
     const prompt = document.getElementById('spaceGenPrompt').value.trim();
     if (!prompt) return;
 
     const apiKey = localStorage.getItem('jade_gemini_key');
     if (!apiKey) { document.getElementById('spaceGenError').textContent = 'No Gemini API key set. Add it in Settings first.'; return; }
+
+    const model = getSelectedNanoBananaModel();
 
     document.getElementById('spaceGenBtn').style.display = 'none';
     document.getElementById('spaceGenLoading').style.display = 'flex';
@@ -1970,7 +2067,7 @@ async function spaceGenerate() {
 
     try {
         const response = await fetch(
-            'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent?key=' + apiKey,
+            'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1985,8 +2082,7 @@ async function spaceGenerate() {
                         ]
                     }],
                     generationConfig: {
-                        responseModalities: ['TEXT', 'IMAGE'],
-                        imageSizeOptions: { width: 2048, height: 2048 }
+                        responseModalities: ['TEXT', 'IMAGE']
                     }
                 })
             }
@@ -2064,6 +2160,7 @@ async function spaceSaveGenerated() {
         await db.collection('spacePhotos').add({
             url, albumId: currentAlbumId,
             caption: prompt, source: 'generated',
+            generatedModel: getSelectedNanoBananaLabel(),
             authorId: currentUser.uid, authorName: currentUserName,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
