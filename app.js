@@ -1845,15 +1845,45 @@ function renderSpaceAlbums() {
             ? '<img src="' + (coverPhoto.thumbUrl || coverPhoto.url) + '" alt="" class="space-album-cover-img">'
             : '<div class="space-album-cover-empty"><span>' + albumIcon(album.name) + '</span></div>';
 
-        return '<div class="space-album-card" onclick="spaceOpenAlbum(\'' + album.id + '\')">' +
+        return '<div class="space-album-card" data-album-id="' + album.id + '" data-is-default="' + (album.isDefault ? 'true' : 'false') + '">' +
             '<div class="space-album-cover">' + coverHtml + '</div>' +
             '<div class="space-album-info">' +
                 '<div class="space-album-name">' + escapeHtml(album.name) + '</div>' +
                 '<div class="space-album-meta">' + count + ' photo' + (count !== 1 ? 's' : '') + '</div>' +
             '</div>' +
-            (!album.isDefault ? '<button class="space-album-delete" onclick="event.stopPropagation();spaceDeleteAlbum(\'' + album.id + '\')" title="Delete album">&times;</button>' : '') +
         '</div>';
     }).join('');
+
+    // Attach tap, long-press, and right-click handlers
+    container.querySelectorAll('.space-album-card').forEach(card => {
+        const albumId = card.dataset.albumId;
+        const isDefault = card.dataset.isDefault === 'true';
+        let pressTimer = null;
+        let didLongPress = false;
+
+        const startPress = () => {
+            didLongPress = false;
+            pressTimer = setTimeout(() => {
+                didLongPress = true;
+                showAlbumContextMenu(albumId, isDefault);
+            }, 600);
+        };
+
+        const cancelPress = () => { clearTimeout(pressTimer); };
+
+        card.addEventListener('mousedown', startPress);
+        card.addEventListener('mouseup', () => { cancelPress(); if (!didLongPress) spaceOpenAlbum(albumId); });
+        card.addEventListener('mouseleave', cancelPress);
+        card.addEventListener('touchstart', startPress, { passive: true });
+        card.addEventListener('touchend', (e) => { cancelPress(); if (!didLongPress) { e.preventDefault(); spaceOpenAlbum(albumId); } });
+        card.addEventListener('touchmove', cancelPress);
+
+        // Desktop: right-click
+        card.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            showAlbumContextMenu(albumId, isDefault);
+        });
+    });
 }
 
 function albumIcon(name) {
@@ -1943,18 +1973,24 @@ function lbApply() {
     let panStartX = 0, panStartY = 0, panStartPosX = 0, panStartPosY = 0;
     let mode = ''; // 'pinch', 'pan', or 'tap'
     let moved = false;
+    let wasPinching = false;
 
     container.addEventListener('touchstart', (e) => {
         e.preventDefault();
         if (e.touches.length === 2) {
             mode = 'pinch';
+            wasPinching = true;
             pinchStartDist = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
             );
             pinchStartScale = lbScale;
         } else if (e.touches.length === 1) {
-            mode = lbScale > 1 ? 'pan' : 'tap';
+            if (!wasPinching) {
+                mode = lbScale > 1 ? 'pan' : 'tap';
+            } else {
+                mode = 'pan';
+            }
             panStartX = e.touches[0].clientX;
             panStartY = e.touches[0].clientY;
             panStartPosX = lbPosX;
@@ -1972,7 +2008,8 @@ function lbApply() {
             );
             lbScale = Math.min(Math.max(pinchStartScale * (dist / pinchStartDist), 1), 8);
             lbApply();
-        } else if (e.touches.length === 1 && mode === 'pan' && lbScale > 1) {
+            moved = true;
+        } else if (e.touches.length === 1 && (mode === 'pan') && lbScale > 1) {
             const dx = e.touches[0].clientX - panStartX;
             const dy = e.touches[0].clientY - panStartY;
             if (Math.abs(dx) > 5 || Math.abs(dy) > 5) moved = true;
@@ -1994,18 +2031,22 @@ function lbApply() {
             panStartY = e.touches[0].clientY;
             panStartPosX = lbPosX;
             panStartPosY = lbPosY;
-            moved = false;
+            moved = true; // Prevent tap-to-close/reset after pinch
             return;
         }
         if (e.touches.length === 0) {
-            // Snap back if barely zoomed
-            if (lbScale <= 1.05) {
+            // Only snap back if barely zoomed AND not right after a pinch
+            if (lbScale <= 1.05 && !wasPinching) {
+                lbScale = 1; lbPosX = 0; lbPosY = 0;
+                lbApply();
+            } else if (lbScale <= 1.05 && wasPinching) {
+                // Pinched back to ~1x, just reset cleanly
                 lbScale = 1; lbPosX = 0; lbPosY = 0;
                 lbApply();
             }
 
-            // Tap without moving
-            if (!moved) {
+            // Tap without moving (only if wasn't pinching)
+            if (!moved && !wasPinching) {
                 if (lbScale > 1.05) {
                     // Zoomed in: tap resets to default view
                     lbScale = 1; lbPosX = 0; lbPosY = 0;
@@ -2016,18 +2057,33 @@ function lbApply() {
                 }
             }
             mode = '';
+            wasPinching = false;
         }
     });
 
-    // Desktop: scroll to zoom
+    // Desktop: scroll/trackpad to zoom
     container.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const factor = e.deltaY > 0 ? 0.9 : 1.1;
+        // Trackpad pinch sends wheel with ctrlKey
+        const factor = e.ctrlKey
+            ? (e.deltaY > 0 ? 0.95 : 1.05)  // Trackpad pinch (finer)
+            : (e.deltaY > 0 ? 0.9 : 1.1);    // Mouse wheel
         lbScale = Math.min(Math.max(lbScale * factor, 1), 8);
         if (lbScale <= 1.05) { lbPosX = 0; lbPosY = 0; }
         lbApply();
         container.style.cursor = lbScale > 1 ? 'grab' : '';
     }, { passive: false });
+
+    // Safari trackpad pinch gesture
+    container.addEventListener('gesturestart', (e) => { e.preventDefault(); }, { passive: false });
+    container.addEventListener('gesturechange', (e) => {
+        e.preventDefault();
+        lbScale = Math.min(Math.max(lbScale * e.scale, 1), 8);
+        if (lbScale <= 1.05) { lbPosX = 0; lbPosY = 0; }
+        lbApply();
+        container.style.cursor = lbScale > 1 ? 'grab' : '';
+    }, { passive: false });
+    container.addEventListener('gestureend', (e) => { e.preventDefault(); }, { passive: false });
 
     // Desktop: click-and-drag to pan when zoomed
     let mouseDown = false, mouseStartX = 0, mouseStartY = 0, mousePosX = 0, mousePosY = 0, mouseMoved = false;
@@ -2254,6 +2310,46 @@ async function spaceCreateAlbum() {
         authorId: currentUser.uid, authorName: currentUserName
     });
     document.getElementById('spaceNewAlbumModal').classList.remove('visible');
+}
+
+// ── Album Context Menu (long-press / right-click) ──
+function showAlbumContextMenu(albumId, isDefault) {
+    const album = spaceAlbums.find(a => a.id === albumId);
+    if (!album) return;
+
+    // Build menu options
+    const menuEl = document.getElementById('albumContextMenu');
+    const listEl = document.getElementById('albumContextMenuList');
+    listEl.innerHTML = '';
+
+    // Rename option (available for all albums)
+    const renameBtn = document.createElement('button');
+    renameBtn.textContent = 'Rename Album';
+    renameBtn.onclick = () => { hideAlbumContextMenu(); spaceRenameAlbum(albumId); };
+    listEl.appendChild(renameBtn);
+
+    // Delete option (only for non-default albums)
+    if (!isDefault) {
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Delete Album';
+        deleteBtn.className = 'album-context-delete';
+        deleteBtn.onclick = () => { hideAlbumContextMenu(); spaceDeleteAlbum(albumId); };
+        listEl.appendChild(deleteBtn);
+    }
+
+    menuEl.classList.add('visible');
+}
+
+function hideAlbumContextMenu() {
+    document.getElementById('albumContextMenu').classList.remove('visible');
+}
+
+async function spaceRenameAlbum(albumId) {
+    const album = spaceAlbums.find(a => a.id === albumId);
+    if (!album) return;
+    const newName = prompt('Rename album:', album.name);
+    if (!newName || newName.trim() === '' || newName.trim() === album.name) return;
+    await db.collection('spaceAlbums').doc(albumId).update({ name: newName.trim() });
 }
 
 async function spaceDeleteAlbum(albumId) {

@@ -349,6 +349,14 @@
                 <!-- ALBUMS VIEW -->
                 <div id="spaceAlbums" class="space-albums-grid"></div>
 
+                <!-- ALBUM CONTEXT MENU -->
+                <div class="modal-overlay" id="albumContextMenu" onclick="if(event.target===this)hideAlbumContextMenu()">
+                    <div class="album-context-content">
+                        <div id="albumContextMenuList" class="album-context-list"></div>
+                        <button class="album-context-cancel" onclick="hideAlbumContextMenu()">Cancel</button>
+                    </div>
+                </div>
+
                 <!-- ALBUM DETAIL VIEW (photo grid inside an album) -->
                 <div id="spaceAlbumView" style="display:none">
                     <div class="space-album-header">
