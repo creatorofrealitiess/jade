@@ -754,6 +754,7 @@ body::after {
     background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     z-index: 100; align-items: flex-end; justify-content: center;
+    padding-bottom: calc(var(--nav-height) + var(--safe-bottom));
 }
 
 .modal-overlay.visible { display: flex; }
@@ -2365,7 +2366,6 @@ body.mini-player-active .content-area {
 /* ═══════ STICKY MODAL FOOTER ═══════ */
 .modal-footer-sticky {
     padding: var(--space-md) var(--space-lg);
-    padding-bottom: calc(var(--space-md) + var(--safe-bottom));
     border-top: var(--border-subtle);
     background: var(--bg-main);
     flex-shrink: 0;
@@ -2688,6 +2688,7 @@ body.mini-player-active .content-area {
     /* Modals center on desktop */
     .modal-overlay {
         align-items: center;
+        padding-bottom: 0;
     }
 
     .modal-content {
