@@ -1389,6 +1389,9 @@ body::after {
     cursor: pointer;
     transition: all 0.2s;
     position: relative;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .space-album-card:hover {
