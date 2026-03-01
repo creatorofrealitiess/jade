@@ -1879,13 +1879,12 @@ function renderSpaceAlbums() {
             ? '<img src="' + (coverPhoto.thumbUrl || coverPhoto.url) + '" alt="" class="space-album-cover-img">'
             : '<div class="space-album-cover-empty"><span>' + albumIcon(album.name) + '</span></div>';
 
-        return '<div class="space-album-card">' +
-            '<div class="space-album-cover" onclick="spaceOpenAlbum(\'' + album.id + '\')">' + coverHtml + '</div>' +
-            '<div class="space-album-info" onclick="spaceOpenAlbum(\'' + album.id + '\')">' +
+        return '<div class="space-album-card" onclick="spaceOpenAlbum(\'' + album.id + '\')">' +
+            '<div class="space-album-cover">' + coverHtml + '</div>' +
+            '<div class="space-album-info">' +
                 '<div class="space-album-name">' + escapeHtml(album.name) + '</div>' +
                 '<div class="space-album-meta">' + count + ' photo' + (count !== 1 ? 's' : '') + '</div>' +
             '</div>' +
-            '<button class="space-album-menu" onclick="event.stopPropagation();showAlbumContextMenu(\'' + album.id + '\')">⋯</button>' +
         '</div>';
     }).join('');
 }
@@ -1908,7 +1907,44 @@ function spaceOpenAlbum(albumId) {
     document.getElementById('spaceAlbumView').style.display = 'block';
     document.getElementById('spacePhotoDetail').style.display = 'none';
     document.getElementById('spaceAddAlbumBtn').style.display = 'none';
+    document.getElementById('albumMoreMenu').style.display = 'none';
+
+    // Show/hide delete option based on whether album is default
+    const deleteBtn = document.getElementById('albumMoreDeleteBtn');
+    if (album && album.isDefault === true) {
+        deleteBtn.style.display = 'none';
+    } else {
+        deleteBtn.style.display = '';
+    }
+
     renderSpacePhotoGrid();
+}
+
+function toggleAlbumMoreMenu() {
+    const menu = document.getElementById('albumMoreMenu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function hideAlbumMoreMenu() {
+    document.getElementById('albumMoreMenu').style.display = 'none';
+}
+
+// Close more menu when clicking outside
+document.addEventListener('click', (e) => {
+    const menu = document.getElementById('albumMoreMenu');
+    if (menu && menu.style.display !== 'none' && !e.target.closest('.space-album-more-btn') && !e.target.closest('.space-album-more-menu')) {
+        menu.style.display = 'none';
+    }
+});
+
+function spaceRenameCurrentAlbum() {
+    if (!currentAlbumId) return;
+    spaceRenameAlbum(currentAlbumId);
+}
+
+function spaceDeleteCurrentAlbum() {
+    if (!currentAlbumId) return;
+    spaceDeleteAlbum(currentAlbumId);
 }
 
 function renderSpacePhotoGrid() {

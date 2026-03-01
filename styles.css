@@ -1392,25 +1392,52 @@ body::after {
 }
 
 .space-album-menu {
-    position: absolute;
-    top: var(--space-xs);
-    right: var(--space-xs);
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+    /* unused — kept for reference */
+}
+
+/* More menu (⋯ dropdown inside album) */
+.space-album-more-btn {
+    min-width: 36px !important;
+    padding-left: var(--space-sm) !important;
+    padding-right: var(--space-sm) !important;
+    font-size: 18px;
+    letter-spacing: 2px;
+    line-height: 1;
+}
+
+.space-album-more-menu {
+    background: var(--bg-card);
+    border: var(--border-subtle);
+    border-radius: var(--radius-md);
+    margin: 0 0 var(--space-sm);
+    overflow: hidden;
+}
+
+.space-album-more-menu button {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
     border: none;
-    background: rgba(0, 0, 0, 0.45);
-    color: white;
-    font-size: 16px;
+    background: none;
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 14px;
     cursor: pointer;
+    text-align: left;
     display: flex;
     align-items: center;
-    justify-content: center;
-    z-index: 2;
-    letter-spacing: 1px;
-    line-height: 1;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    gap: var(--space-xs);
+}
+
+.space-album-more-menu button:not(:last-child) {
+    border-bottom: var(--border-subtle);
+}
+
+.space-album-more-menu button:active {
+    background: var(--bg-elevated);
+}
+
+.space-album-more-menu button.album-more-delete {
+    color: var(--rose);
 }
 
 .space-album-card:hover {

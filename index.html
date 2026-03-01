@@ -365,10 +365,15 @@
                         </div>
                         <div class="space-album-actions">
                             <label class="btn-secondary btn-sm" for="spacePhotoUpload">&#128247; Upload</label>
-                            <button class="btn-secondary btn-sm" onclick="spacePastePhoto()">&#128203; Paste</button>
                             <input type="file" id="spacePhotoUpload" accept="image/*" multiple style="display:none">
                             <button class="btn-primary btn-sm" onclick="spaceOpenGenerate()">&#10024; Generate</button>
+                            <button class="btn-secondary btn-sm space-album-more-btn" onclick="toggleAlbumMoreMenu()">⋯</button>
                         </div>
+                    </div>
+                    <div class="space-album-more-menu" id="albumMoreMenu" style="display:none">
+                        <button onclick="hideAlbumMoreMenu();spacePastePhoto()">&#128203; Paste from Clipboard</button>
+                        <button onclick="hideAlbumMoreMenu();spaceRenameCurrentAlbum()">&#9998; Rename Album</button>
+                        <button id="albumMoreDeleteBtn" class="album-more-delete" onclick="hideAlbumMoreMenu();spaceDeleteCurrentAlbum()">&#128465; Delete Album</button>
                     </div>
                     <div id="spacePhotoGrid" class="space-photo-grid"></div>
                 </div>
