@@ -380,7 +380,7 @@ body::after {
 }
 
 .alignment-dot.filled {
-    background: linear-gradient(135deg, #f5d5d5, var(--rose));
+    background: linear-gradient(135deg, var(--jade-light), var(--jade-primary));
 }
 
 .alignment-dot:hover { transform: scaleY(1.5); }

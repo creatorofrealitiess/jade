@@ -362,15 +362,15 @@ function renderAlignmentChart() {
     const days = [];
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    // Find all unique user IDs in alignment data (skip legacy shared keys)
+    // Find all unique user IDs in alignment data
     const userIds = new Set();
     for (const key of Object.keys(alignmentData)) {
-        const underscoreIdx = key.indexOf('_', 11); // After "2026-03-01_"
-        if (underscoreIdx > 0) {
-            const uid = key.substring(underscoreIdx + 1);
+        // New format: "2026-03-01_userId" (date is always 10 chars)
+        if (key.length > 11 && key[10] === '_') {
+            const uid = key.substring(11);
             userIds.add(uid);
         }
-        // Skip legacy keys (no underscore after date) — old shared data
+        // Skip legacy keys like "2026-03-01" (exactly 10 chars, no underscore)
     }
     
     for (let i = 6; i >= 0; i--) {
