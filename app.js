@@ -1879,71 +1879,15 @@ function renderSpaceAlbums() {
             ? '<img src="' + (coverPhoto.thumbUrl || coverPhoto.url) + '" alt="" class="space-album-cover-img">'
             : '<div class="space-album-cover-empty"><span>' + albumIcon(album.name) + '</span></div>';
 
-        return '<div class="space-album-card" data-album-id="' + album.id + '" data-is-default="' + (album.isDefault ? 'true' : 'false') + '">' +
-            '<div class="space-album-cover">' + coverHtml + '</div>' +
-            '<div class="space-album-info">' +
+        return '<div class="space-album-card">' +
+            '<div class="space-album-cover" onclick="spaceOpenAlbum(\'' + album.id + '\')">' + coverHtml + '</div>' +
+            '<div class="space-album-info" onclick="spaceOpenAlbum(\'' + album.id + '\')">' +
                 '<div class="space-album-name">' + escapeHtml(album.name) + '</div>' +
                 '<div class="space-album-meta">' + count + ' photo' + (count !== 1 ? 's' : '') + '</div>' +
             '</div>' +
+            '<button class="space-album-menu" onclick="event.stopPropagation();showAlbumContextMenu(\'' + album.id + '\')">⋯</button>' +
         '</div>';
     }).join('');
-
-    // Attach tap, long-press, and right-click handlers
-    container.querySelectorAll('.space-album-card').forEach(card => {
-        const albumId = card.dataset.albumId;
-        const isDefault = card.dataset.isDefault === 'true';
-        let pressTimer = null;
-        let didLongPress = false;
-        let didScroll = false;
-        let touchStartY = 0;
-
-        const startPress = (startY) => {
-            didLongPress = false;
-            didScroll = false;
-            touchStartY = startY || 0;
-            pressTimer = setTimeout(() => {
-                didLongPress = true;
-                showAlbumContextMenu(albumId);
-            }, 600);
-        };
-
-        const cancelPress = () => { clearTimeout(pressTimer); };
-
-        // Prevent iOS native long-press image menu on album covers
-        card.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-            // On desktop, show our custom menu
-            if (!('ontouchstart' in window)) {
-                showAlbumContextMenu(albumId);
-            }
-        });
-
-        // Touch events (mobile)
-        card.addEventListener('touchstart', (e) => {
-            startPress(e.touches[0].clientY);
-        }, { passive: true });
-
-        card.addEventListener('touchmove', (e) => {
-            // If finger moved more than 10px, it's a scroll not a tap
-            if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
-                didScroll = true;
-                cancelPress();
-            }
-        });
-
-        card.addEventListener('touchend', (e) => {
-            cancelPress();
-            if (!didLongPress && !didScroll) {
-                e.preventDefault();
-                spaceOpenAlbum(albumId);
-            }
-        });
-
-        // Mouse events (desktop)
-        card.addEventListener('mousedown', () => { startPress(); });
-        card.addEventListener('mouseup', () => { cancelPress(); if (!didLongPress) spaceOpenAlbum(albumId); });
-        card.addEventListener('mouseleave', cancelPress);
-    });
 }
 
 function albumIcon(name) {
