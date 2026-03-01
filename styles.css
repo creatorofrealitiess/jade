@@ -1605,6 +1605,38 @@ body::after {
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* Thinking Preview (interim thought images) */
+.space-gen-thinking-preview {
+    margin-top: var(--space-md);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    border: var(--border-subtle);
+    position: relative;
+}
+
+.space-gen-thinking-preview img {
+    width: 100%;
+    max-height: 40vh;
+    object-fit: contain;
+    background: var(--bg-surface);
+    display: block;
+    opacity: 0.85;
+    transition: opacity 0.3s ease;
+}
+
+.space-gen-thinking-label {
+    position: absolute;
+    top: var(--space-sm);
+    left: var(--space-sm);
+    background: rgba(0, 0, 0, 0.6);
+    color: var(--jade-light);
+    font-family: var(--font-handwritten);
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: var(--radius-xl);
+    backdrop-filter: blur(4px);
+}
+
 /* Move Photo List */
 .space-move-list {
     display: flex;
@@ -2330,6 +2362,15 @@ body.mini-player-active .content-area {
     gap: var(--space-sm);
 }
 
+/* ═══════ STICKY MODAL FOOTER ═══════ */
+.modal-footer-sticky {
+    padding: var(--space-md) var(--space-lg);
+    padding-bottom: calc(var(--space-md) + var(--safe-bottom));
+    border-top: var(--border-subtle);
+    background: var(--bg-main);
+    flex-shrink: 0;
+}
+
 /* ═══════ NANO BANANA MODEL TOGGLE ═══════ */
 .nano-banana-toggle {
     display: flex;
@@ -2338,7 +2379,7 @@ body.mini-player-active .content-area {
     gap: var(--space-sm);
     margin-bottom: var(--space-md);
     padding: var(--space-sm) var(--space-md);
-    background: var(--card-bg);
+    background: var(--bg-card);
     border-radius: var(--radius-md);
     border: var(--border-subtle);
 }
@@ -2356,18 +2397,6 @@ body.mini-player-active .content-area {
 
 .nb-label-right {
     opacity: 0.5;
-}
-
-.nano-banana-toggle:has(input:checked) .nb-label-left {
-    color: var(--text-muted);
-    font-weight: 400;
-    opacity: 0.5;
-}
-
-.nano-banana-toggle:has(input:checked) .nb-label-right {
-    color: var(--jade-light);
-    font-weight: 500;
-    opacity: 1;
 }
 
 .nb-switch {

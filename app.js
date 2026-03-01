@@ -1668,7 +1668,7 @@ document.getElementById('genRefUpload').addEventListener('change', (e) => {
     
     files.forEach(file => {
         if (!file.type.startsWith('image/')) return;
-        if (spaceRefImages.length >= 5) return; // Max 5 references
+        if (spaceRefImages.length >= 5) return;
         
         const reader = new FileReader();
         reader.onload = () => {
@@ -1679,10 +1679,10 @@ document.getElementById('genRefUpload').addEventListener('change', (e) => {
         reader.readAsDataURL(file);
     });
     
-    e.target.value = ''; // Reset so same file can be re-added
+    e.target.value = '';
 });
 
-// Paste from clipboard support for reference images
+// Paste from clipboard button
 async function pasteRefFromClipboard() {
     try {
         const clipboardItems = await navigator.clipboard.read();
@@ -1716,7 +1716,7 @@ async function pasteRefFromClipboard() {
     }
 }
 
-// Also support Ctrl+V / Cmd+V paste on the generate modal
+// Ctrl+V / Cmd+V paste support when modal is open
 document.addEventListener('paste', (e) => {
     const modal = document.getElementById('spaceGenerateModal');
     if (!modal.classList.contains('visible')) return;
@@ -1757,7 +1757,6 @@ function initSpace() {
     // Model toggle label updates
     const modelToggle = document.getElementById('nanoBananaModelToggle');
     if (modelToggle) {
-        // Restore last used model preference
         const savedModel = localStorage.getItem('jade_nano_banana_model');
         if (savedModel === 'pro') modelToggle.checked = true;
         
@@ -1775,7 +1774,6 @@ function initSpace() {
             }
         });
         
-        // Apply initial state
         if (modelToggle.checked) {
             document.getElementById('nbLabelLeft').style.opacity = '0.5';
             document.getElementById('nbLabelRight').style.color = 'var(--jade-light)';
@@ -2025,8 +2023,10 @@ function spaceOpenGenerate() {
     document.getElementById('spaceGenPrompt').value = '';
     document.getElementById('spaceGenPreview').style.display = 'none';
     document.getElementById('spaceGenLoading').style.display = 'none';
+    document.getElementById('spaceGenThinkingPreview').style.display = 'none';
     document.getElementById('spaceGenError').textContent = '';
     document.getElementById('spaceGenBtn').style.display = 'block';
+    document.querySelector('#spaceGenLoading p').textContent = 'Creating your image...';
     spaceGeneratedImageData = null;
     spaceRefImages = [];
     renderRefGrid();
@@ -2062,12 +2062,14 @@ async function spaceGenerate() {
     document.getElementById('spaceGenLoading').style.display = 'flex';
     document.getElementById('spaceGenError').textContent = '';
     document.getElementById('spaceGenPreview').style.display = 'none';
+    document.getElementById('spaceGenThinkingPreview').style.display = 'none';
 
     spaceGenController = new AbortController();
 
     try {
+        // Use streaming endpoint to capture thought images
         const response = await fetch(
-            'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey,
+            'https://generativelanguage.googleapis.com/v1beta/models/' + model + ':streamGenerateContent?alt=sse&key=' + apiKey,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -2093,28 +2095,66 @@ async function spaceGenerate() {
             throw new Error(errData.error?.message || 'API error: ' + response.status);
         }
 
-        const data = await response.json();
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let lastImageData = null;
+        let thoughtImageCount = 0;
 
-        // Find the image part in the response
-        let imageData = null;
-        if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-            for (const part of data.candidates[0].content.parts) {
-                if (part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')) {
-                    imageData = part.inlineData;
-                    break;
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+
+            // Process SSE events
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep incomplete line in buffer
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const jsonStr = line.slice(6).trim();
+                if (!jsonStr || jsonStr === '[DONE]') continue;
+
+                try {
+                    const chunk = JSON.parse(jsonStr);
+                    if (!chunk.candidates || !chunk.candidates[0] || !chunk.candidates[0].content) continue;
+
+                    const parts = chunk.candidates[0].content.parts || [];
+                    for (const part of parts) {
+                        if (part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')) {
+                            // Check if this is a thought image (has thought_signature) or final
+                            if (part.thoughtSignature || part.thought_signature) {
+                                // This is a thinking/interim image — show as preview
+                                thoughtImageCount++;
+                                document.getElementById('spaceGenThinkingImg').src = 'data:' + part.inlineData.mimeType + ';base64,' + part.inlineData.data;
+                                document.getElementById('spaceGenThinkingPreview').style.display = 'block';
+                                document.querySelector('.space-gen-thinking-label').textContent = 'Thinking... (' + thoughtImageCount + ')';
+                                document.querySelector('#spaceGenLoading p').textContent = 'Refining the image...';
+                            }
+                            // Always track the latest image (last one = final)
+                            lastImageData = part.inlineData;
+                        }
+                    }
+                } catch (e) {
+                    // Skip unparseable chunks
                 }
             }
         }
 
-        if (!imageData) throw new Error('No image was generated. Try a different prompt.');
+        // Hide thinking preview
+        document.getElementById('spaceGenThinkingPreview').style.display = 'none';
 
-        spaceGeneratedImageData = imageData;
-        document.getElementById('spaceGenPreviewImg').src = 'data:' + imageData.mimeType + ';base64,' + imageData.data;
+        if (!lastImageData) throw new Error('No image was generated. Try a different prompt.');
+
+        spaceGeneratedImageData = lastImageData;
+        document.getElementById('spaceGenPreviewImg').src = 'data:' + lastImageData.mimeType + ';base64,' + lastImageData.data;
         document.getElementById('spaceGenPreview').style.display = 'block';
         document.getElementById('spaceGenLoading').style.display = 'none';
 
     } catch (err) {
         document.getElementById('spaceGenLoading').style.display = 'none';
+        document.getElementById('spaceGenThinkingPreview').style.display = 'none';
         if (err.name === 'AbortError') {
             document.getElementById('spaceGenBtn').style.display = 'block';
             return;
@@ -2128,7 +2168,9 @@ async function spaceGenerate() {
 function spaceCancelGenerate() {
     if (spaceGenController) { spaceGenController.abort(); spaceGenController = null; }
     document.getElementById('spaceGenLoading').style.display = 'none';
+    document.getElementById('spaceGenThinkingPreview').style.display = 'none';
     document.getElementById('spaceGenBtn').style.display = 'block';
+    document.querySelector('#spaceGenLoading p').textContent = 'Creating your image...';
 }
 
 function spaceDiscardGenerated() {

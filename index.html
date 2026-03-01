@@ -409,6 +409,11 @@
                                 <input type="file" id="genRefUpload" accept="image/*" multiple style="display:none">
                             </div>
 
+                            <div id="spaceGenThinkingPreview" class="space-gen-thinking-preview" style="display:none">
+                                <span class="space-gen-thinking-label">Thinking...</span>
+                                <img id="spaceGenThinkingImg" src="">
+                            </div>
+
                             <div id="spaceGenPreview" class="space-gen-preview" style="display:none">
                                 <img id="spaceGenPreviewImg" src="">
                                 <div class="space-gen-preview-actions">
@@ -422,7 +427,9 @@
                                 <button class="btn-secondary btn-sm" onclick="spaceCancelGenerate()">Cancel</button>
                             </div>
                             <div id="spaceGenError" class="auth-error" style="margin-top:var(--space-sm)"></div>
-                            <button class="btn-primary btn-sm" id="spaceGenBtn" onclick="spaceGenerate()" style="margin-top:var(--space-md);width:100%">&#10024; Generate</button>
+                        </div>
+                        <div class="modal-footer-sticky">
+                            <button class="btn-primary btn-sm" id="spaceGenBtn" onclick="spaceGenerate()" style="width:100%">&#10024; Generate</button>
                         </div>
                     </div>
                 </div>
