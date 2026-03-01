@@ -1842,7 +1842,7 @@ function renderSpaceAlbums() {
         const count = albumPhotos.length;
 
         const coverHtml = coverPhoto
-            ? '<img src="' + coverPhoto.url + '" alt="" class="space-album-cover-img">'
+            ? '<img src="' + (coverPhoto.thumbUrl || coverPhoto.url) + '" alt="" class="space-album-cover-img">'
             : '<div class="space-album-cover-empty"><span>' + albumIcon(album.name) + '</span></div>';
 
         return '<div class="space-album-card" onclick="spaceOpenAlbum(\'' + album.id + '\')">' +
@@ -1889,7 +1889,7 @@ function renderSpacePhotoGrid() {
 
     container.innerHTML = photos.map(p =>
         '<div class="space-photo-thumb" onclick="spaceOpenPhoto(\'' + p.id + '\')">' +
-            '<img src="' + p.url + '" alt="" loading="lazy">' +
+            '<img src="' + (p.thumbUrl || p.url) + '" alt="" loading="lazy">' +
             (p.caption ? '<div class="space-photo-thumb-caption">' + escapeHtml(p.caption) + '</div>' : '') +
         '</div>'
     ).join('');
@@ -1924,12 +1924,13 @@ document.getElementById('spacePhotoUpload').addEventListener('change', async (e)
 
         try {
             const photoId = 'space_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-            const ref = storage.ref('space/' + photoId);
+            const storagePath = 'space/' + photoId;
+            const ref = storage.ref(storagePath);
             await ref.put(file);
             const url = await ref.getDownloadURL();
 
             await db.collection('spacePhotos').add({
-                url, albumId: currentAlbumId,
+                url, storagePath, albumId: currentAlbumId,
                 caption: '', source: 'uploaded',
                 authorId: currentUser.uid, authorName: currentUserName,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -1963,12 +1964,13 @@ async function spacePastePhoto() {
 
             try {
                 const photoId = 'space_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-                const ref = storage.ref('space/' + photoId);
+                const storagePath = 'space/' + photoId;
+                const ref = storage.ref(storagePath);
                 await ref.put(blob);
                 const url = await ref.getDownloadURL();
 
                 await db.collection('spacePhotos').add({
-                    url, albumId: currentAlbumId,
+                    url, storagePath, albumId: currentAlbumId,
                     caption: '', source: 'uploaded',
                     authorId: currentUser.uid, authorName: currentUserName,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2010,12 +2012,13 @@ document.addEventListener('paste', async (e) => {
 
     try {
         const photoId = 'space_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-        const ref = storage.ref('space/' + photoId);
+        const storagePath = 'space/' + photoId;
+        const ref = storage.ref(storagePath);
         await ref.put(blob);
         const url = await ref.getDownloadURL();
 
         await db.collection('spacePhotos').add({
-            url, albumId: currentAlbumId,
+            url, storagePath, albumId: currentAlbumId,
             caption: '', source: 'uploaded',
             authorId: currentUser.uid, authorName: currentUserName,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2287,13 +2290,14 @@ async function spaceSaveGenerated() {
         const blob = new Blob([byteArray], { type: spaceGeneratedImageData.mimeType });
 
         const photoId = 'gen_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
-        const ref = storage.ref('space/' + photoId);
+        const storagePath = 'space/' + photoId;
+        const ref = storage.ref(storagePath);
         await ref.put(blob);
         const url = await ref.getDownloadURL();
 
         const prompt = document.getElementById('spaceGenPrompt').value.trim();
         await db.collection('spacePhotos').add({
-            url, albumId: currentAlbumId,
+            url, storagePath, albumId: currentAlbumId,
             caption: prompt, source: 'generated',
             generatedModel: getSelectedNanoBananaLabel(),
             authorId: currentUser.uid, authorName: currentUserName,
