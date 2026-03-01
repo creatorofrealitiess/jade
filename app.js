@@ -167,7 +167,7 @@ document.getElementById('avatarUpload').addEventListener('change', async (e) => 
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { alert('Please choose an image'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+    if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB'); return; }
 
     const btn = document.querySelector('.settings-avatar-btn');
     btn.textContent = 'Uploading...';
@@ -800,7 +800,7 @@ document.getElementById('personaPhotoUpload').addEventListener('change', (e) => 
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { alert('Please choose an image'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+    if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB'); return; }
     personaPhotoFile = file;
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -1131,7 +1131,7 @@ document.getElementById('connectionPhotoUpload').addEventListener('change', (e) 
     const file = e.target.files[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { alert('Please choose an image'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+    if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB'); return; }
     connectionPhotoFile = file;
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -1610,7 +1610,7 @@ function renderWorldExtras() {
 document.getElementById('worldPhotoUpload').addEventListener('change', (e) => {
     const file = e.target.files[0]; if (!file) return;
     if (!file.type.startsWith('image/')) { alert('Please choose an image'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('Image must be under 5MB'); return; }
+    if (file.size > 10 * 1024 * 1024) { alert('Image must be under 10MB'); return; }
     worldPhotoFile = file;
     const reader = new FileReader();
     reader.onload = (ev) => { worldPhotoPreview = ev.target.result; showWorldEditorPhoto(worldPhotoPreview, worldSelectedType); };
