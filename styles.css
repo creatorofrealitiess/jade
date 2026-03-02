@@ -41,7 +41,7 @@
 
     /* Typography */
     --font-display: 'Cormorant Garamond', Georgia, serif;
-    --font-body: 'Oriya Sangam MN', 'Quicksand', 'Segoe UI', sans-serif;
+    --font-body: 'PT Sans', 'Quicksand', 'Segoe UI', sans-serif;
     --font-handwritten: 'Caveat', cursive;
 
     /* Spacing */
@@ -74,7 +74,6 @@ html { height: 100%; overflow: hidden; background: #0f1a14; }
 
 body {
     font-family: var(--font-body);
-    font-size: 11px;
     background: var(--bg-main);
     color: var(--text-primary);
     height: 100%;
