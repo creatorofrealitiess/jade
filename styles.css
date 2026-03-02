@@ -717,6 +717,9 @@ body::after {
     border-radius: var(--radius-lg); font-size: 12px; line-height: 1.5;
     word-wrap: break-word;
     position: relative;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .msg-edited {
