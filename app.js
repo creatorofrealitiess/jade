@@ -720,27 +720,39 @@ function initMessenger() {
             const bubble = document.createElement('div');
             bubble.className = 'msg ' + (isMine ? 'sent' : 'received');
             bubble.innerHTML = safeText.innerHTML;
+            if (msg.edited) {
+                const editedLabel = document.createElement('span');
+                editedLabel.className = 'msg-edited';
+                editedLabel.textContent = 'edited';
+                bubble.appendChild(editedLabel);
+            }
             
-            // Long-press to delete (works for both sisters)
-            let timer = null;
-            const startPress = (e) => {
-                timer = setTimeout(() => {
-                    if (confirm('Delete this message?')) {
-                        db.collection('messages').doc(doc.id).delete();
-                    }
-                }, 500);
+            // Long-press / right-click to show edit/delete menu
+            const showMsgMenu = () => {
+                msgMenuTarget = doc.id;
+                msgMenuText = msg.text;
+                const menu = document.getElementById('msgContextMenu');
+                // Only show edit for own messages
+                document.getElementById('msgMenuEdit').style.display = isMine ? '' : 'none';
+                menu.classList.add('visible');
             };
-            const cancelPress = () => { if (timer) clearTimeout(timer); };
-            
-            bubble.addEventListener('touchstart', startPress, { passive: true });
-            bubble.addEventListener('touchend', cancelPress);
-            bubble.addEventListener('touchmove', cancelPress);
-            bubble.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                if (confirm('Delete this message?')) {
-                    db.collection('messages').doc(doc.id).delete();
+
+            let timer = null;
+            let didScroll = false;
+            let touchStartY = 0;
+            bubble.addEventListener('touchstart', (e) => {
+                didScroll = false;
+                touchStartY = e.touches[0].clientY;
+                timer = setTimeout(() => { if (!didScroll) showMsgMenu(); }, 500);
+            }, { passive: true });
+            bubble.addEventListener('touchmove', (e) => {
+                if (Math.abs(e.touches[0].clientY - touchStartY) > 10) {
+                    didScroll = true;
+                    clearTimeout(timer);
                 }
             });
+            bubble.addEventListener('touchend', () => { clearTimeout(timer); });
+            bubble.addEventListener('contextmenu', (e) => { e.preventDefault(); showMsgMenu(); });
             
             row.appendChild(bubble);
             container.appendChild(row);
@@ -751,15 +763,51 @@ function initMessenger() {
     });
 }
 
+let msgMenuTarget = null;
+let msgMenuText = '';
+
+function hideMsgMenu() {
+    document.getElementById('msgContextMenu').classList.remove('visible');
+}
+
+function msgEdit() {
+    hideMsgMenu();
+    if (!msgMenuTarget) return;
+    const input = document.getElementById('messengerInput');
+    input.value = msgMenuText;
+    input.focus();
+    // Switch send button to save mode
+    editingMsgId = msgMenuTarget;
+    document.getElementById('messengerSend').innerHTML = '&#10003;';
+}
+
+function msgDelete() {
+    hideMsgMenu();
+    if (!msgMenuTarget) return;
+    if (confirm('Delete this message?')) {
+        db.collection('messages').doc(msgMenuTarget).delete();
+    }
+}
+
+let editingMsgId = null;
+
 async function sendMessage() {
     const input = document.getElementById('messengerInput');
     const text = input.value.trim();
     if (!text) return;
     input.value = '';
-    await db.collection('messages').add({
-        text, senderId: currentUser.uid, senderName: currentUserName,
-        sentAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+
+    if (editingMsgId) {
+        // Save edit
+        await db.collection('messages').doc(editingMsgId).update({ text, edited: true });
+        editingMsgId = null;
+        document.getElementById('messengerSend').innerHTML = '&rarr;';
+    } else {
+        await db.collection('messages').add({
+            text, senderId: currentUser.uid, senderName: currentUserName,
+            sentAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
 }
 
 document.getElementById('messengerSend').addEventListener('click', sendMessage);

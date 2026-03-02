@@ -74,7 +74,7 @@ html { height: 100%; overflow: hidden; background: #0f1a14; }
 
 body {
     font-family: var(--font-body);
-    font-size: 13px;
+    font-size: 14px;
     background: var(--bg-main);
     color: var(--text-primary);
     height: 100%;
@@ -714,8 +714,67 @@ body::after {
 
 .msg {
     max-width: 100%; padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-lg); font-size: 13px; line-height: 1.4;
+    border-radius: var(--radius-lg); font-size: 12px; line-height: 1.5;
     word-wrap: break-word;
+    position: relative;
+}
+
+.msg-edited {
+    display: block;
+    font-size: 10px;
+    opacity: 0.5;
+    margin-top: 2px;
+    font-style: italic;
+}
+
+/* Message context menu */
+.msg-context-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 250;
+    background: rgba(0, 0, 0, 0.5);
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.msg-context-overlay.visible {
+    display: flex;
+}
+
+.msg-context-sheet {
+    width: 100%;
+    max-width: 400px;
+    padding: 0 var(--space-md) calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+}
+
+.msg-context-sheet button {
+    width: 100%;
+    padding: var(--space-md);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.msg-context-sheet button:active {
+    background: var(--bg-elevated);
+}
+
+.msg-context-sheet .msg-context-delete {
+    color: var(--rose);
+}
+
+.msg-context-sheet .msg-context-cancel {
+    margin-top: var(--space-xs);
+    color: var(--text-faint);
 }
 
 .msg.sent {
@@ -2899,7 +2958,7 @@ body.mini-player-active .content-area {
         gap: var(--space-md);
     }
 
-    .msg { font-size: 15px; }
+    .msg { font-size: 13px; }
     .msg-row { max-width: 65%; }
 
     /* Persona cards */

@@ -535,6 +535,15 @@ You are already there."></textarea>
                 </div>
             </div>
 
+            <!-- MESSAGE CONTEXT MENU -->
+            <div class="msg-context-overlay" id="msgContextMenu" onclick="hideMsgMenu()">
+                <div class="msg-context-sheet" onclick="event.stopPropagation()">
+                    <button id="msgMenuEdit" onclick="msgEdit()">✎ Edit Message</button>
+                    <button class="msg-context-delete" onclick="msgDelete()">🗑 Delete Message</button>
+                    <button class="msg-context-cancel" onclick="hideMsgMenu()">Cancel</button>
+                </div>
+            </div>
+
             <!-- SCENE BUILDER -->
             <div class="page" id="page-gallery">
                 <div class="section-header">
