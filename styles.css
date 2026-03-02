@@ -41,7 +41,7 @@
 
     /* Typography */
     --font-display: 'Cormorant Garamond', Georgia, serif;
-    --font-body: 'PT Sans', 'Quicksand', 'Segoe UI', sans-serif;
+    --font-body: 'Hubballi', 'Quicksand', 'Segoe UI', sans-serif;
     --font-handwritten: 'Caveat', cursive;
 
     /* Spacing */
@@ -713,7 +713,7 @@ body::after {
 
 .msg {
     max-width: 100%; padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-lg); font-size: 10px; line-height: 1.4;
+    border-radius: var(--radius-lg); font-size: 14px; line-height: 1.5;
     word-wrap: break-word;
 }
 
