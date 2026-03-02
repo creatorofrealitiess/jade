@@ -714,7 +714,7 @@ body::after {
 
 .msg {
     max-width: 100%; padding: var(--space-sm) var(--space-md);
-    border-radius: var(--radius-lg); font-size: 12px; line-height: 1.5;
+    border-radius: var(--radius-lg); font-size: 15px; line-height: 1.5;
     word-wrap: break-word;
     position: relative;
     -webkit-touch-callout: none;
