@@ -2695,10 +2695,9 @@ async function spaceGenerate() {
                     }],
                     generationConfig: {
                         responseModalities: ['TEXT', 'IMAGE'],
-                        thinkingConfig: {
-                            thinkingLevel: 'HIGH',
-                            includeThoughts: true
-                        },
+                        thinkingConfig: model.includes('flash')
+                            ? { thinkingLevel: 'HIGH', includeThoughts: true }
+                            : { includeThoughts: true },
                         imageConfig: {
                             imageSize: '2K'
                         }
