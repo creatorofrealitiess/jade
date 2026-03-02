@@ -769,6 +769,20 @@ You are already there."></textarea>
         </nav>
     </div>
 
+    <!-- PHOTO CROP MODAL -->
+    <div id="cropModal" class="crop-modal">
+        <div class="crop-header">
+            <button class="crop-cancel" onclick="closeCropModal()">Cancel</button>
+            <span class="crop-title">Adjust Photo</span>
+            <button class="crop-confirm" onclick="confirmCrop()">Done</button>
+        </div>
+        <div class="crop-area" id="cropArea">
+            <div class="crop-circle-mask"></div>
+            <img id="cropImg" src="" draggable="false">
+        </div>
+        <div class="crop-hint">Drag to reposition</div>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
