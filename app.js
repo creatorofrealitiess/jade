@@ -2190,8 +2190,14 @@ function spaceOpenPhoto(photoId) {
     currentPhotoId = photoId;
 
     document.getElementById('spacePhotoDetailImg').src = photo.url;
-    document.getElementById('spacePhotoDetailCaption').textContent = photo.caption || '';
-    document.getElementById('spacePhotoDetailCaption').style.display = photo.caption ? 'block' : 'none';
+    const captionEl = document.getElementById('spacePhotoDetailCaption');
+    if (photo.caption) {
+        captionEl.innerHTML = escapeHtml(photo.caption).replace(/([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]+)/gu, '<span style="font-style:normal">$1</span>');
+        captionEl.style.display = 'block';
+    } else {
+        captionEl.textContent = '';
+        captionEl.style.display = 'none';
+    }
 
     const date = photo.createdAt ? new Date(photo.createdAt.seconds * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
     const source = photo.source === 'generated' ? ('Generated with ' + (photo.generatedModel || 'Nano Banana Pro')) : 'Uploaded';
@@ -2521,7 +2527,8 @@ async function spaceSaveCaption() {
     if (!currentPhotoId) return;
     const caption = document.getElementById('spaceEditCaptionInput').value.trim();
     await db.collection('spacePhotos').doc(currentPhotoId).update({ caption });
-    document.getElementById('spacePhotoDetailCaption').textContent = caption;
+    const captionEl = document.getElementById('spacePhotoDetailCaption');
+    captionEl.innerHTML = escapeHtml(caption).replace(/([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]+)/gu, '<span style="font-style:normal">$1</span>');
     document.getElementById('spacePhotoDetailCaption').style.display = caption ? 'block' : 'none';
     document.getElementById('spaceEditCaptionModal').classList.remove('visible');
 }
