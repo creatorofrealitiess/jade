@@ -421,7 +421,18 @@
                                 <span class="nb-label nb-label-right" id="nbLabelRight">Pro</span>
                             </div>
 
-                            <textarea class="auth-input" id="spaceGenPrompt" placeholder="A golden retriever sleeping by the stone fireplace in our Jade cottage, warm afternoon light through the window..." rows="4" style="width:100%;resize:none"></textarea>
+                            <textarea class="auth-input" id="spaceGenPrompt" placeholder="A golden retriever sleeping by the stone fireplace in our Jade cottage, warm afternoon light through the window..." rows="5" style="width:100%;resize:vertical;min-height:100px"></textarea>
+                            
+                            <div class="gen-saved-section">
+                                <div class="gen-saved-header" onclick="toggleSavedPrompts()">
+                                    <span class="gen-saved-toggle-icon" id="savedPromptsToggleIcon">&#9654;</span>
+                                    <label class="gen-saved-label">Saved Prompts</label>
+                                </div>
+                                <div id="savedPromptsBody" class="gen-saved-body" style="display:none">
+                                    <div id="savedPromptsList" class="gen-saved-list"></div>
+                                    <button class="btn-secondary btn-sm" onclick="saveCurrentPrompt()" style="width:100%;margin-top:var(--space-xs)">&#128190; Save Current Prompt</button>
+                                </div>
+                            </div>
                             
                             <div class="gen-ref-section">
                                 <label class="gen-ref-label">Reference images</label>

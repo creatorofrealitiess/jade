@@ -2005,6 +2005,108 @@ function removeRefImage(index) {
     renderRefGrid();
 }
 
+// ── Saved Prompts ──
+let savedPrompts = []; // { id, name, prompt, refImages: [{ data, mimeType }] }
+let savedPromptsUnsub = null;
+
+function initSavedPrompts() {
+    if (savedPromptsUnsub) savedPromptsUnsub();
+    savedPromptsUnsub = db.collection('savedPrompts').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+        savedPrompts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        renderSavedPromptsList();
+    });
+}
+
+function toggleSavedPrompts() {
+    const body = document.getElementById('savedPromptsBody');
+    const icon = document.getElementById('savedPromptsToggleIcon');
+    if (body.style.display === 'none') {
+        body.style.display = 'block';
+        icon.innerHTML = '&#9660;';
+    } else {
+        body.style.display = 'none';
+        icon.innerHTML = '&#9654;';
+    }
+}
+
+function renderSavedPromptsList() {
+    const container = document.getElementById('savedPromptsList');
+    if (!container) return;
+    if (savedPrompts.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-faint);font-size:13px;text-align:center;padding:var(--space-sm) 0">No saved prompts yet.</p>';
+        return;
+    }
+    container.innerHTML = savedPrompts.map(sp =>
+        '<div class="gen-saved-item" onclick="loadSavedPrompt(\'' + sp.id + '\')">' +
+            '<div class="gen-saved-item-top">' +
+                '<span class="gen-saved-item-name">' + escapeHtml(sp.name) + '</span>' +
+                '<button class="gen-saved-item-delete" onclick="event.stopPropagation();deleteSavedPrompt(\'' + sp.id + '\')">&times;</button>' +
+            '</div>' +
+            '<div class="gen-saved-item-preview">' + escapeHtml(sp.prompt.substring(0, 80)) + (sp.prompt.length > 80 ? '...' : '') + '</div>' +
+            (sp.refImages && sp.refImages.length > 0 ? '<div class="gen-saved-item-refs">' + sp.refImages.length + ' ref image' + (sp.refImages.length !== 1 ? 's' : '') + ' attached</div>' : '') +
+        '</div>'
+    ).join('');
+}
+
+async function saveCurrentPrompt() {
+    const prompt = document.getElementById('spaceGenPrompt').value.trim();
+    if (!prompt) {
+        document.getElementById('spaceGenError').textContent = 'Write a prompt first before saving.';
+        setTimeout(() => { document.getElementById('spaceGenError').textContent = ''; }, 3000);
+        return;
+    }
+    const name = window.prompt('Give this prompt a name:', prompt.substring(0, 40));
+    if (!name) return;
+
+    try {
+        // Store ref images as base64 in Firestore (capped to keep doc size manageable)
+        const refsToSave = spaceRefImages.slice(0, 5).map(img => ({
+            data: img.data,
+            mimeType: img.mimeType,
+            name: img.name || 'image'
+        }));
+
+        await db.collection('savedPrompts').add({
+            name: name.trim(),
+            prompt,
+            refImages: refsToSave,
+            authorId: currentUser.uid,
+            authorName: currentUserName,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    } catch (err) {
+        document.getElementById('spaceGenError').textContent = 'Failed to save: ' + err.message;
+        setTimeout(() => { document.getElementById('spaceGenError').textContent = ''; }, 3000);
+    }
+}
+
+function loadSavedPrompt(promptId) {
+    const sp = savedPrompts.find(p => p.id === promptId);
+    if (!sp) return;
+    document.getElementById('spaceGenPrompt').value = sp.prompt;
+    // Load saved reference images
+    if (sp.refImages && sp.refImages.length > 0) {
+        spaceRefImages = sp.refImages.map(img => ({
+            data: img.data,
+            mimeType: img.mimeType,
+            name: img.name || 'image'
+        }));
+        renderRefGrid();
+    }
+    // Collapse saved prompts after loading
+    document.getElementById('savedPromptsBody').style.display = 'none';
+    document.getElementById('savedPromptsToggleIcon').innerHTML = '&#9654;';
+}
+
+async function deleteSavedPrompt(promptId) {
+    if (!confirm('Delete this saved prompt?')) return;
+    try {
+        await db.collection('savedPrompts').doc(promptId).delete();
+    } catch (err) {
+        document.getElementById('spaceGenError').textContent = 'Delete failed: ' + err.message;
+    }
+}
+
 function initSpace() {
     // Model toggle label updates
     const modelToggle = document.getElementById('nanoBananaModelToggle');
@@ -2059,6 +2161,8 @@ function initSpace() {
         renderSpaceAlbums();
         if (currentAlbumId) renderSpacePhotoGrid();
     });
+
+    initSavedPrompts();
 }
 
 // ── Album Views ──
@@ -2073,7 +2177,13 @@ function spaceShowAlbums() {
 
 function spaceBack() {
     if (document.getElementById('spacePhotoDetail').style.display !== 'none') {
-        spaceOpenAlbum(currentAlbumId);
+        // Going back from photo detail to album — restore scroll
+        document.getElementById('spacePhotoDetail').style.display = 'none';
+        document.getElementById('spaceAlbumView').style.display = 'block';
+        setTimeout(() => {
+            const scrollArea = document.querySelector('.section-content');
+            if (scrollArea) scrollArea.scrollTop = albumScrollPos;
+        }, 0);
     } else if (document.getElementById('spaceAlbumView').style.display !== 'none') {
         spaceShowAlbums();
     } else {
@@ -2184,10 +2294,15 @@ function renderSpacePhotoGrid() {
 }
 
 // ── Photo Detail ──
+let albumScrollPos = 0; // Preserve scroll when viewing a photo
+
 function spaceOpenPhoto(photoId) {
     const photo = spacePhotos.find(p => p.id === photoId);
     if (!photo) return;
     currentPhotoId = photoId;
+    // Save scroll position of the album grid area
+    const scrollArea = document.querySelector('.section-content');
+    if (scrollArea) albumScrollPos = scrollArea.scrollTop;
 
     document.getElementById('spacePhotoDetailImg').src = photo.url;
     const captionEl = document.getElementById('spacePhotoDetailCaption');
@@ -2211,6 +2326,40 @@ function spaceOpenPhoto(photoId) {
 let lbScale = 1;
 let lbPosX = 0;
 let lbPosY = 0;
+
+// Swipe navigation in photo detail view
+(function initPhotoDetailSwipe() {
+    const detail = document.getElementById('spacePhotoDetail');
+    let startX = 0, startY = 0, swiping = false;
+
+    detail.addEventListener('touchstart', (e) => {
+        // Don't interfere with button taps
+        if (e.target.closest('button')) return;
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        swiping = true;
+    }, { passive: true });
+
+    detail.addEventListener('touchend', (e) => {
+        if (!swiping) return;
+        swiping = false;
+        const dx = e.changedTouches[0].clientX - startX;
+        const dy = e.changedTouches[0].clientY - startY;
+        // Only count horizontal swipes (not vertical scrolling)
+        if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+            const photos = spacePhotos.filter(p => p.albumId === currentAlbumId);
+            const idx = photos.findIndex(p => p.id === currentPhotoId);
+            if (idx === -1) return;
+            if (dx < 0 && idx < photos.length - 1) {
+                // Swipe left → next photo
+                spaceOpenPhoto(photos[idx + 1].id);
+            } else if (dx > 0 && idx > 0) {
+                // Swipe right → previous photo
+                spaceOpenPhoto(photos[idx - 1].id);
+            }
+        }
+    }, { passive: true });
+})();
 
 function openPhotoLightbox() {
     const photo = spacePhotos.find(p => p.id === currentPhotoId);
@@ -2397,6 +2546,14 @@ document.getElementById('photoLightbox').addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && document.getElementById('photoLightbox').classList.contains('visible')) {
         closePhotoLightbox();
+    }
+    // Arrow keys to navigate photos in detail view
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && document.getElementById('spacePhotoDetail').style.display !== 'none' && !document.getElementById('photoLightbox').classList.contains('visible')) {
+        const photos = spacePhotos.filter(p => p.albumId === currentAlbumId);
+        const idx = photos.findIndex(p => p.id === currentPhotoId);
+        if (idx === -1) return;
+        if (e.key === 'ArrowRight' && idx < photos.length - 1) spaceOpenPhoto(photos[idx + 1].id);
+        if (e.key === 'ArrowLeft' && idx > 0) spaceOpenPhoto(photos[idx - 1].id);
     }
 });
 
@@ -2647,6 +2804,11 @@ function spaceOpenGenerate() {
     spaceGeneratedImageData = null;
     spaceRefImages = [];
     renderRefGrid();
+    // Reset saved prompts collapse state
+    const savedBody = document.getElementById('savedPromptsBody');
+    if (savedBody) savedBody.style.display = 'none';
+    const savedIcon = document.getElementById('savedPromptsToggleIcon');
+    if (savedIcon) savedIcon.innerHTML = '&#9654;';
     document.getElementById('spaceGenerateModal').classList.add('visible');
     setTimeout(() => document.getElementById('spaceGenPrompt').focus(), 100);
 }
@@ -2826,7 +2988,8 @@ async function spaceSaveGenerated() {
         const prompt = document.getElementById('spaceGenPrompt').value.trim();
         await db.collection('spacePhotos').add({
             url, storagePath, albumId: currentAlbumId,
-            caption: prompt, source: 'generated',
+            caption: '', source: 'generated',
+            generatedPrompt: prompt,
             generatedModel: getSelectedNanoBananaLabel(),
             authorId: currentUser.uid, authorName: currentUserName,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
