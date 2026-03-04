@@ -2354,6 +2354,26 @@ function renderSpacePhotoGrid() {
 // ── Photo Detail ──
 let albumScrollPos = 0; // Preserve scroll when viewing a photo
 
+function updatePhotoNav() {
+    const photos = spacePhotos.filter(p => p.albumId === currentAlbumId);
+    const idx = photos.findIndex(p => p.id === currentPhotoId);
+    const counter = document.getElementById('photoNavCounter');
+    const prevBtn = document.getElementById('photoPrevBtn');
+    const nextBtn = document.getElementById('photoNextBtn');
+    if (photos.length <= 1) {
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        counter.style.display = 'none';
+    } else {
+        prevBtn.style.display = '';
+        nextBtn.style.display = '';
+        counter.style.display = '';
+        prevBtn.disabled = idx <= 0;
+        nextBtn.disabled = idx >= photos.length - 1;
+        counter.textContent = (idx + 1) + ' / ' + photos.length;
+    }
+}
+
 function spaceOpenPhoto(photoId) {
     const photo = spacePhotos.find(p => p.id === photoId);
     if (!photo) return;
@@ -2378,6 +2398,7 @@ function spaceOpenPhoto(photoId) {
 
     document.getElementById('spaceAlbumView').style.display = 'none';
     document.getElementById('spacePhotoDetail').style.display = 'block';
+    updatePhotoNav();
 }
 
 // ── Photo Lightbox ──
@@ -2433,12 +2454,14 @@ let lbPosY = 0;
                     detailEl.style.opacity = '1';
                     detailEl.style.transform = 'translateX(0)';
                 });
+                updatePhotoNav();
             }, 80);
         };
         preload.onerror = () => {
             // If preload fails, still navigate but without smooth transition
             currentPhotoId = nextPhoto.id;
             imgEl.src = nextPhoto.url;
+            updatePhotoNav();
         };
         preload.src = nextPhoto.url;
     }

@@ -381,6 +381,11 @@
                 <!-- PHOTO DETAIL VIEW -->
                 <div id="spacePhotoDetail" style="display:none">
                     <div class="space-photo-detail">
+                        <div class="space-photo-nav">
+                            <button class="space-photo-nav-btn" id="photoPrevBtn" onclick="window._navigatePhoto('prev')">&#8249;</button>
+                            <span class="space-photo-nav-counter" id="photoNavCounter"></span>
+                            <button class="space-photo-nav-btn" id="photoNextBtn" onclick="window._navigatePhoto('next')">&#8250;</button>
+                        </div>
                         <img id="spacePhotoDetailImg" src="" onclick="openPhotoLightbox()">
                         <div class="space-photo-detail-caption" id="spacePhotoDetailCaption"></div>
                         <div class="space-photo-detail-meta" id="spacePhotoDetailMeta"></div>
