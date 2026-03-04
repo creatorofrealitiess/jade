@@ -1994,10 +1994,22 @@ function renderRefGrid() {
     const grid = document.getElementById('genRefGrid');
     grid.innerHTML = spaceRefImages.map((img, i) => 
         '<div class="gen-ref-thumb">' +
-            '<img src="data:' + img.mimeType + ';base64,' + img.data + '">' +
+            '<img src="data:' + img.mimeType + ';base64,' + img.data + '" onclick="openRefPreview(' + i + ')">' +
             '<button class="gen-ref-remove" onclick="removeRefImage(' + i + ')">&times;</button>' +
         '</div>'
     ).join('');
+}
+
+function openRefPreview(index) {
+    const img = spaceRefImages[index];
+    if (!img) return;
+    const overlay = document.getElementById('refPreviewOverlay');
+    document.getElementById('refPreviewImg').src = 'data:' + img.mimeType + ';base64,' + img.data;
+    overlay.classList.add('visible');
+}
+
+function closeRefPreview() {
+    document.getElementById('refPreviewOverlay').classList.remove('visible');
 }
 
 function removeRefImage(index) {
@@ -2043,7 +2055,12 @@ function renderSavedPromptsList() {
                 '<button class="gen-saved-item-delete" onclick="event.stopPropagation();deleteSavedPrompt(\'' + sp.id + '\')">&times;</button>' +
             '</div>' +
             '<div class="gen-saved-item-preview">' + escapeHtml(sp.prompt.substring(0, 80)) + (sp.prompt.length > 80 ? '...' : '') + '</div>' +
-            (sp.refImages && sp.refImages.length > 0 ? '<div class="gen-saved-item-refs">' + sp.refImages.length + ' ref image' + (sp.refImages.length !== 1 ? 's' : '') + ' attached</div>' : '') +
+            (sp.refImages && sp.refImages.length > 0
+                ? '<div class="gen-saved-item-ref-row">' +
+                    sp.refImages.map(r => '<img class="gen-saved-item-ref-thumb" src="' + r.url + '">').join('') +
+                    '<span class="gen-saved-item-refs">' + sp.refImages.length + ' ref' + (sp.refImages.length !== 1 ? 's' : '') + '</span>' +
+                  '</div>'
+                : '') +
         '</div>'
     ).join('');
 }
@@ -2059,17 +2076,26 @@ async function saveCurrentPrompt() {
     if (!name) return;
 
     try {
-        // Store ref images as base64 in Firestore (capped to keep doc size manageable)
-        const refsToSave = spaceRefImages.slice(0, 5).map(img => ({
-            data: img.data,
-            mimeType: img.mimeType,
-            name: img.name || 'image'
-        }));
+        // Upload ref images to Firebase Storage, store URLs in Firestore
+        const refUrls = [];
+        for (let i = 0; i < spaceRefImages.length && i < 5; i++) {
+            const img = spaceRefImages[i];
+            const byteChars = atob(img.data);
+            const byteArray = new Uint8Array(byteChars.length);
+            for (let j = 0; j < byteChars.length; j++) byteArray[j] = byteChars.charCodeAt(j);
+            const blob = new Blob([byteArray], { type: img.mimeType });
+
+            const refId = 'prompt_ref_' + Date.now() + '_' + i + '_' + Math.random().toString(36).substr(2, 4);
+            const storageRef = storage.ref('savedPromptRefs/' + refId);
+            await storageRef.put(blob);
+            const url = await storageRef.getDownloadURL();
+            refUrls.push({ url, mimeType: img.mimeType, storagePath: 'savedPromptRefs/' + refId });
+        }
 
         await db.collection('savedPrompts').add({
             name: name.trim(),
             prompt,
-            refImages: refsToSave,
+            refImages: refUrls,
             authorId: currentUser.uid,
             authorName: currentUserName,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -2080,19 +2106,31 @@ async function saveCurrentPrompt() {
     }
 }
 
-function loadSavedPrompt(promptId) {
+async function loadSavedPrompt(promptId) {
     const sp = savedPrompts.find(p => p.id === promptId);
     if (!sp) return;
     document.getElementById('spaceGenPrompt').value = sp.prompt;
-    // Load saved reference images
+
+    // Load saved reference images from URLs → convert to base64 for Gemini
+    spaceRefImages = [];
     if (sp.refImages && sp.refImages.length > 0) {
-        spaceRefImages = sp.refImages.map(img => ({
-            data: img.data,
-            mimeType: img.mimeType,
-            name: img.name || 'image'
-        }));
-        renderRefGrid();
+        for (const ref of sp.refImages) {
+            try {
+                const response = await fetch(ref.url);
+                const blob = await response.blob();
+                const base64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(',')[1]);
+                    reader.readAsDataURL(blob);
+                });
+                spaceRefImages.push({ data: base64, mimeType: ref.mimeType, name: 'saved-ref' });
+            } catch (e) {
+                console.warn('Could not load saved ref image:', e);
+            }
+        }
     }
+    renderRefGrid();
+
     // Collapse saved prompts after loading
     document.getElementById('savedPromptsBody').style.display = 'none';
     document.getElementById('savedPromptsToggleIcon').innerHTML = '&#9654;';
@@ -2101,6 +2139,15 @@ function loadSavedPrompt(promptId) {
 async function deleteSavedPrompt(promptId) {
     if (!confirm('Delete this saved prompt?')) return;
     try {
+        const sp = savedPrompts.find(p => p.id === promptId);
+        // Clean up ref images from Storage
+        if (sp && sp.refImages) {
+            for (const ref of sp.refImages) {
+                if (ref.storagePath) {
+                    try { await storage.ref(ref.storagePath).delete(); } catch (e) { /* ignore */ }
+                }
+            }
+        }
         await db.collection('savedPrompts').doc(promptId).delete();
     } catch (err) {
         document.getElementById('spaceGenError').textContent = 'Delete failed: ' + err.message;
@@ -2181,9 +2228,9 @@ function spaceBack() {
         document.getElementById('spacePhotoDetail').style.display = 'none';
         document.getElementById('spaceAlbumView').style.display = 'block';
         setTimeout(() => {
-            const scrollArea = document.querySelector('.section-content');
+            const scrollArea = document.querySelector('.content-area');
             if (scrollArea) scrollArea.scrollTop = albumScrollPos;
-        }, 0);
+        }, 10);
     } else if (document.getElementById('spaceAlbumView').style.display !== 'none') {
         spaceShowAlbums();
     } else {
@@ -2300,8 +2347,8 @@ function spaceOpenPhoto(photoId) {
     const photo = spacePhotos.find(p => p.id === photoId);
     if (!photo) return;
     currentPhotoId = photoId;
-    // Save scroll position of the album grid area
-    const scrollArea = document.querySelector('.section-content');
+    // Save scroll position of the content area
+    const scrollArea = document.querySelector('.content-area');
     if (scrollArea) albumScrollPos = scrollArea.scrollTop;
 
     document.getElementById('spacePhotoDetailImg').src = photo.url;
@@ -2332,8 +2379,58 @@ let lbPosY = 0;
     const detail = document.getElementById('spacePhotoDetail');
     let startX = 0, startY = 0, swiping = false;
 
+    function navigatePhoto(direction) {
+        const photos = spacePhotos.filter(p => p.albumId === currentAlbumId);
+        const idx = photos.findIndex(p => p.id === currentPhotoId);
+        if (idx === -1) return;
+        const nextIdx = direction === 'next' ? idx + 1 : idx - 1;
+        if (nextIdx < 0 || nextIdx >= photos.length) return;
+
+        const nextPhoto = photos[nextIdx];
+        const detailEl = document.querySelector('.space-photo-detail');
+
+        // Preload the next image before transitioning
+        const preload = new Image();
+        preload.onload = () => {
+            // Slide out
+            const slideOut = direction === 'next' ? 'translateX(-30px)' : 'translateX(30px)';
+            detailEl.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+            detailEl.style.opacity = '0';
+            detailEl.style.transform = slideOut;
+
+            setTimeout(() => {
+                // Update content while invisible
+                currentPhotoId = nextPhoto.id;
+                document.getElementById('spacePhotoDetailImg').src = nextPhoto.url;
+                const captionEl = document.getElementById('spacePhotoDetailCaption');
+                if (nextPhoto.caption) {
+                    captionEl.innerHTML = escapeHtml(nextPhoto.caption).replace(/([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]+)/gu, '<span style="font-style:normal">$1</span>');
+                    captionEl.style.display = 'block';
+                } else {
+                    captionEl.textContent = '';
+                    captionEl.style.display = 'none';
+                }
+                const date = nextPhoto.createdAt ? new Date(nextPhoto.createdAt.seconds * 1000).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+                const source = nextPhoto.source === 'generated' ? ('Generated with ' + (nextPhoto.generatedModel || 'Nano Banana Pro')) : 'Uploaded';
+                document.getElementById('spacePhotoDetailMeta').textContent = source + (date ? ' · ' + date : '');
+
+                // Slide in from opposite side
+                const slideIn = direction === 'next' ? 'translateX(30px)' : 'translateX(-30px)';
+                detailEl.style.transition = 'none';
+                detailEl.style.transform = slideIn;
+
+                requestAnimationFrame(() => {
+                    detailEl.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+                    detailEl.style.opacity = '1';
+                    detailEl.style.transform = 'translateX(0)';
+                });
+            }, 150);
+        };
+        // Start loading — if cached this fires instantly
+        preload.src = nextPhoto.url;
+    }
+
     detail.addEventListener('touchstart', (e) => {
-        // Don't interfere with button taps
         if (e.target.closest('button')) return;
         startX = e.touches[0].clientX;
         startY = e.touches[0].clientY;
@@ -2345,20 +2442,14 @@ let lbPosY = 0;
         swiping = false;
         const dx = e.changedTouches[0].clientX - startX;
         const dy = e.changedTouches[0].clientY - startY;
-        // Only count horizontal swipes (not vertical scrolling)
         if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-            const photos = spacePhotos.filter(p => p.albumId === currentAlbumId);
-            const idx = photos.findIndex(p => p.id === currentPhotoId);
-            if (idx === -1) return;
-            if (dx < 0 && idx < photos.length - 1) {
-                // Swipe left → next photo
-                spaceOpenPhoto(photos[idx + 1].id);
-            } else if (dx > 0 && idx > 0) {
-                // Swipe right → previous photo
-                spaceOpenPhoto(photos[idx - 1].id);
-            }
+            if (dx < 0) navigatePhoto('next');
+            else navigatePhoto('prev');
         }
     }, { passive: true });
+
+    // Expose for keyboard navigation
+    window._navigatePhoto = navigatePhoto;
 })();
 
 function openPhotoLightbox() {
@@ -2542,18 +2633,14 @@ document.getElementById('photoLightbox').addEventListener('click', (e) => {
     }
 });
 
-// Escape to close
+// Escape to close, arrows to navigate
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && document.getElementById('photoLightbox').classList.contains('visible')) {
         closePhotoLightbox();
     }
-    // Arrow keys to navigate photos in detail view
     if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && document.getElementById('spacePhotoDetail').style.display !== 'none' && !document.getElementById('photoLightbox').classList.contains('visible')) {
-        const photos = spacePhotos.filter(p => p.albumId === currentAlbumId);
-        const idx = photos.findIndex(p => p.id === currentPhotoId);
-        if (idx === -1) return;
-        if (e.key === 'ArrowRight' && idx < photos.length - 1) spaceOpenPhoto(photos[idx + 1].id);
-        if (e.key === 'ArrowLeft' && idx > 0) spaceOpenPhoto(photos[idx - 1].id);
+        if (e.key === 'ArrowRight') window._navigatePhoto('next');
+        if (e.key === 'ArrowLeft') window._navigatePhoto('prev');
     }
 });
 

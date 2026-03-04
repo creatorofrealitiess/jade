@@ -469,6 +469,12 @@
                     </div>
                 </div>
 
+                <!-- REFERENCE IMAGE PREVIEW -->
+                <div id="refPreviewOverlay" class="ref-preview-overlay" onclick="if(event.target===this)closeRefPreview()">
+                    <button class="ref-preview-close" onclick="closeRefPreview()">&times;</button>
+                    <img id="refPreviewImg" src="" class="ref-preview-img">
+                </div>
+
                 <!-- MOVE TO ALBUM MODAL -->
                 <div class="modal-overlay" id="spaceMoveModal">
                     <div class="modal-content">
