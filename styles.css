@@ -1797,7 +1797,7 @@ body::after {
     align-items: center;
     justify-content: center;
     gap: var(--space-md);
-    margin-bottom: var(--space-md);
+    margin-top: var(--space-lg);
 }
 
 .space-photo-nav-btn {
