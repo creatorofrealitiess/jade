@@ -2018,13 +2018,19 @@ function removeRefImage(index) {
 }
 
 // ── Saved Prompts ──
-let savedPrompts = []; // { id, name, prompt, refImages: [{ data, mimeType }] }
+let savedPrompts = []; // { id, name, prompt, refImages: [{ url, mimeType, storagePath }] }
 let savedPromptsUnsub = null;
 
 function initSavedPrompts() {
     if (savedPromptsUnsub) savedPromptsUnsub();
-    savedPromptsUnsub = db.collection('savedPrompts').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
-        savedPrompts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const ref = db.collection('shared').doc('savedPrompts');
+    ref.get().then(doc => { if (!doc.exists) ref.set({ list: [] }); });
+    savedPromptsUnsub = ref.onSnapshot(doc => {
+        if (doc.exists && doc.data().list) {
+            savedPrompts = doc.data().list;
+        } else {
+            savedPrompts = [];
+        }
         renderSavedPromptsList();
     });
 }
@@ -2048,11 +2054,11 @@ function renderSavedPromptsList() {
         container.innerHTML = '<p style="color:var(--text-faint);font-size:13px;text-align:center;padding:var(--space-sm) 0">No saved prompts yet.</p>';
         return;
     }
-    container.innerHTML = savedPrompts.map(sp =>
-        '<div class="gen-saved-item" onclick="loadSavedPrompt(\'' + sp.id + '\')">' +
+    container.innerHTML = savedPrompts.map((sp, i) =>
+        '<div class="gen-saved-item" onclick="loadSavedPrompt(' + i + ')">' +
             '<div class="gen-saved-item-top">' +
                 '<span class="gen-saved-item-name">' + escapeHtml(sp.name) + '</span>' +
-                '<button class="gen-saved-item-delete" onclick="event.stopPropagation();deleteSavedPrompt(\'' + sp.id + '\')">&times;</button>' +
+                '<button class="gen-saved-item-delete" onclick="event.stopPropagation();deleteSavedPrompt(' + i + ')">&times;</button>' +
             '</div>' +
             '<div class="gen-saved-item-preview">' + escapeHtml(sp.prompt.substring(0, 80)) + (sp.prompt.length > 80 ? '...' : '') + '</div>' +
             (sp.refImages && sp.refImages.length > 0
@@ -2076,7 +2082,7 @@ async function saveCurrentPrompt() {
     if (!name) return;
 
     try {
-        // Upload ref images to Firebase Storage, store URLs in Firestore
+        // Upload ref images to Firebase Storage, store URLs
         const refUrls = [];
         for (let i = 0; i < spaceRefImages.length && i < 5; i++) {
             const img = spaceRefImages[i];
@@ -2092,22 +2098,26 @@ async function saveCurrentPrompt() {
             refUrls.push({ url, mimeType: img.mimeType, storagePath: 'savedPromptRefs/' + refId });
         }
 
-        await db.collection('savedPrompts').add({
+        const newPrompt = {
+            id: 'sp_' + Date.now(),
             name: name.trim(),
             prompt,
             refImages: refUrls,
             authorId: currentUser.uid,
             authorName: currentUserName,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        });
+            createdAt: Date.now()
+        };
+
+        const updated = [newPrompt, ...savedPrompts];
+        await db.collection('shared').doc('savedPrompts').set({ list: updated });
     } catch (err) {
         document.getElementById('spaceGenError').textContent = 'Failed to save: ' + err.message;
         setTimeout(() => { document.getElementById('spaceGenError').textContent = ''; }, 3000);
     }
 }
 
-async function loadSavedPrompt(promptId) {
-    const sp = savedPrompts.find(p => p.id === promptId);
+async function loadSavedPrompt(index) {
+    const sp = savedPrompts[index];
     if (!sp) return;
     document.getElementById('spaceGenPrompt').value = sp.prompt;
 
@@ -2136,10 +2146,10 @@ async function loadSavedPrompt(promptId) {
     document.getElementById('savedPromptsToggleIcon').innerHTML = '&#9654;';
 }
 
-async function deleteSavedPrompt(promptId) {
+async function deleteSavedPrompt(index) {
     if (!confirm('Delete this saved prompt?')) return;
     try {
-        const sp = savedPrompts.find(p => p.id === promptId);
+        const sp = savedPrompts[index];
         // Clean up ref images from Storage
         if (sp && sp.refImages) {
             for (const ref of sp.refImages) {
@@ -2148,7 +2158,8 @@ async function deleteSavedPrompt(promptId) {
                 }
             }
         }
-        await db.collection('savedPrompts').doc(promptId).delete();
+        const updated = savedPrompts.filter((_, i) => i !== index);
+        await db.collection('shared').doc('savedPrompts').set({ list: updated });
     } catch (err) {
         document.getElementById('spaceGenError').textContent = 'Delete failed: ' + err.message;
     }
@@ -2388,20 +2399,20 @@ let lbPosY = 0;
 
         const nextPhoto = photos[nextIdx];
         const detailEl = document.querySelector('.space-photo-detail');
+        const imgEl = document.getElementById('spacePhotoDetailImg');
 
-        // Preload the next image before transitioning
+        // Preload the next image
         const preload = new Image();
         preload.onload = () => {
-            // Slide out
-            const slideOut = direction === 'next' ? 'translateX(-30px)' : 'translateX(30px)';
-            detailEl.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
-            detailEl.style.opacity = '0';
-            detailEl.style.transform = slideOut;
+            // Quick slide: dim + shift, swap, then restore
+            detailEl.style.transition = 'opacity 0.08s ease, transform 0.08s ease';
+            detailEl.style.opacity = '0.3';
+            detailEl.style.transform = direction === 'next' ? 'translateX(-15px)' : 'translateX(15px)';
 
             setTimeout(() => {
-                // Update content while invisible
+                // Swap content
                 currentPhotoId = nextPhoto.id;
-                document.getElementById('spacePhotoDetailImg').src = nextPhoto.url;
+                imgEl.src = nextPhoto.url;
                 const captionEl = document.getElementById('spacePhotoDetailCaption');
                 if (nextPhoto.caption) {
                     captionEl.innerHTML = escapeHtml(nextPhoto.caption).replace(/([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{E0020}-\u{E007F}]+)/gu, '<span style="font-style:normal">$1</span>');
@@ -2414,19 +2425,21 @@ let lbPosY = 0;
                 const source = nextPhoto.source === 'generated' ? ('Generated with ' + (nextPhoto.generatedModel || 'Nano Banana Pro')) : 'Uploaded';
                 document.getElementById('spacePhotoDetailMeta').textContent = source + (date ? ' · ' + date : '');
 
-                // Slide in from opposite side
-                const slideIn = direction === 'next' ? 'translateX(30px)' : 'translateX(-30px)';
+                // Snap to opposite side then animate in
                 detailEl.style.transition = 'none';
-                detailEl.style.transform = slideIn;
-
+                detailEl.style.transform = direction === 'next' ? 'translateX(15px)' : 'translateX(-15px)';
                 requestAnimationFrame(() => {
-                    detailEl.style.transition = 'opacity 0.15s ease, transform 0.15s ease';
+                    detailEl.style.transition = 'opacity 0.08s ease, transform 0.08s ease';
                     detailEl.style.opacity = '1';
                     detailEl.style.transform = 'translateX(0)';
                 });
-            }, 150);
+            }, 80);
         };
-        // Start loading — if cached this fires instantly
+        preload.onerror = () => {
+            // If preload fails, still navigate but without smooth transition
+            currentPhotoId = nextPhoto.id;
+            imgEl.src = nextPhoto.url;
+        };
         preload.src = nextPhoto.url;
     }
 
