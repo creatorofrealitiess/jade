@@ -836,20 +836,20 @@ function renderPersonasList() {
         container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">&#129695;</div><p>No personas yet. Tap + to define your Jade self.</p></div>';
         return;
     }
-    container.innerHTML = personasData.map(p => {
-        const avatarHtml = p.photoUrl
-            ? '<img src="' + p.photoUrl + '" alt="">'
-            : '<span>' + (p.name || '?')[0].toUpperCase() + '</span>';
-        return '<div class="persona-card" onclick="personaOpen(\'' + p.id + '\')">' +
-            '<div class="persona-card-avatar">' + avatarHtml + '</div>' +
-            '<div class="persona-card-info">' +
-                '<div class="persona-card-name">' + escapeHtml(p.name || 'Unnamed') + '</div>' +
-                (p.age ? '<div class="persona-card-age">' + escapeHtml(p.age) + '</div>' : '') +
-                (p.personality ? '<div class="persona-card-preview">' + escapeHtml(p.personality) + '</div>' : '') +
+    container.innerHTML = '<div class="char-card-grid">' + personasData.map(p => {
+        const hasPhoto = !!p.photoUrl;
+        const initial = (p.name || '?')[0].toUpperCase();
+        return '<div class="char-card" onclick="personaOpen(\'' + p.id + '\')">' +
+            '<div class="char-card-img">' +
+                (hasPhoto ? '<img src="' + p.photoUrl + '" alt="">' : '<div class="char-card-placeholder"><span>' + initial + '</span></div>') +
             '</div>' +
-            '<div class="persona-card-arrow">&rsaquo;</div>' +
+            '<div class="char-card-overlay">' +
+                '<div class="char-card-name">' + escapeHtml(p.name || 'Unnamed') + '</div>' +
+                (p.age ? '<div class="char-card-sub">' + escapeHtml(p.age) + '</div>' : '') +
+            '</div>' +
+            (p.personality ? '<div class="char-card-tags"><span class="char-card-tag">' + escapeHtml(p.personality).substring(0, 40) + (p.personality.length > 40 ? '…' : '') + '</span></div>' : '') +
         '</div>';
-    }).join('');
+    }).join('') + '</div>';
 }
 
 // ── Views ──
@@ -1137,20 +1137,21 @@ function renderConnectionsList() {
         return;
     }
 
-    container.innerHTML = filtered.map(c => {
-        const avatarHtml = c.photoUrl
-            ? '<img src="' + c.photoUrl + '" alt="">'
-            : '<span>' + (c.name || '?')[0].toUpperCase() + '</span>';
-        return '<div class="persona-card" onclick="connectionOpen(\'' + c.id + '\')">' +
-            '<div class="persona-card-avatar">' + avatarHtml + '</div>' +
-            '<div class="persona-card-info">' +
-                '<div class="persona-card-name">' + escapeHtml(c.name || 'Unnamed') + '</div>' +
-                '<div class="persona-card-age">' + escapeHtml(c.type || '') + (c.age ? ' · ' + escapeHtml(c.age) : '') + '</div>' +
-                (c.relationship ? '<div class="persona-card-preview">' + escapeHtml(c.relationship) + '</div>' : '') +
+    container.innerHTML = '<div class="char-card-grid">' + filtered.map(c => {
+        const hasPhoto = !!c.photoUrl;
+        const initial = (c.name || '?')[0].toUpperCase();
+        const typeClass = c.type ? 'connection-tag-' + c.type.replace(/\s+/g, '-') : '';
+        return '<div class="char-card" onclick="connectionOpen(\'' + c.id + '\')">' +
+            '<div class="char-card-img">' +
+                (hasPhoto ? '<img src="' + c.photoUrl + '" alt="">' : '<div class="char-card-placeholder"><span>' + initial + '</span></div>') +
             '</div>' +
-            '<div class="persona-card-arrow">&rsaquo;</div>' +
+            '<div class="char-card-overlay">' +
+                '<div class="char-card-name">' + escapeHtml(c.name || 'Unnamed') + '</div>' +
+                (c.type ? '<div class="char-card-type-badge ' + typeClass + '">' + escapeHtml(c.type) + '</div>' : '') +
+            '</div>' +
+            (c.relationship ? '<div class="char-card-tags"><span class="char-card-tag">' + escapeHtml(c.relationship).substring(0, 40) + (c.relationship.length > 40 ? '…' : '') + '</span></div>' : '') +
         '</div>';
-    }).join('');
+    }).join('') + '</div>';
 }
 
 function filterConnections(type) {

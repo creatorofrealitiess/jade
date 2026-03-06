@@ -1054,71 +1054,137 @@ body::after {
 /* ═══════ PERSONAS ═══════ */
 .personas-list { display: flex; flex-direction: column; gap: var(--space-md); }
 
-.persona-card {
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    padding: var(--space-lg);
-    border: var(--border-subtle);
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
+/* ═══════ CHARACTER CARDS (SillyTavern style) ═══════ */
+.char-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--space-md);
 }
 
-.persona-card:hover { box-shadow: var(--shadow-soft); border-color: rgba(90, 158, 122, 0.2); }
-
-.persona-card-avatar {
-    width: 56px; height: 56px;
-    border-radius: 50%;
-    background: var(--bg-surface);
-    border: 2px solid var(--jade-pale);
+.char-card {
+    position: relative;
+    border-radius: var(--radius-lg);
     overflow: hidden;
+    cursor: pointer;
+    background: var(--bg-card);
+    border: var(--border-subtle);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.char-card:active {
+    transform: scale(0.97);
+}
+
+.char-card:hover {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+    border-color: rgba(90, 158, 122, 0.25);
+}
+
+.char-card-img {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: var(--bg-surface);
+}
+
+.char-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.char-card-placeholder {
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0;
+    background: linear-gradient(135deg, var(--jade-mist) 0%, var(--bg-elevated) 50%, var(--jade-whisper) 100%);
 }
 
-.persona-card-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-.persona-card-avatar span {
+.char-card-placeholder span {
     font-family: var(--font-display);
-    font-size: 22px;
-    color: var(--text-muted);
-    font-weight: 500;
+    font-size: 56px;
+    font-weight: 600;
+    color: var(--jade-primary);
+    opacity: 0.6;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-.persona-card-info { flex: 1; min-width: 0; }
+.char-card-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: var(--space-xl) var(--space-md) var(--space-md);
+    background: linear-gradient(to top, rgba(15, 26, 20, 0.92) 0%, rgba(15, 26, 20, 0.7) 50%, transparent 100%);
+    z-index: 1;
+}
 
-.persona-card-name {
+.char-card-name {
     font-family: var(--font-display);
-    font-size: 20px;
+    font-size: 19px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+.char-card-sub {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-top: 2px;
+}
+
+.char-card-type-badge {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 10px;
     font-weight: 500;
-    color: var(--text-primary);
-}
-
-.persona-card-age {
-    font-family: var(--font-handwritten);
-    font-size: 14px;
-    color: var(--text-muted);
-    margin-top: 1px;
-}
-
-.persona-card-preview {
-    font-size: 13px;
-    color: var(--text-muted);
+    padding: 2px 8px;
+    border-radius: var(--radius-xl);
     margin-top: 4px;
-    display: -webkit-box;
-    -webkit-line-clamp: 1;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    text-transform: capitalize;
+    backdrop-filter: blur(4px);
 }
 
-.persona-card-arrow {
-    font-size: 24px;
-    color: var(--text-faint);
-    flex-shrink: 0;
+.char-card-type-badge.connection-tag-love-interest {
+    background: rgba(155, 138, 184, 0.3);
+    color: #c4b5de;
+}
+
+.char-card-type-badge.connection-tag-friends {
+    background: rgba(201, 164, 90, 0.3);
+    color: #dbc48a;
+}
+
+.char-card-type-badge.connection-tag-kin {
+    background: rgba(201, 134, 126, 0.3);
+    color: #daa099;
+}
+
+.char-card-type-badge.connection-tag-pets {
+    background: rgba(90, 158, 122, 0.3);
+    color: #8cc8a4;
+}
+
+.char-card-tags {
+    padding: var(--space-sm) var(--space-md);
+    background: var(--bg-card);
+}
+
+.char-card-tag {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-muted);
+    display: block;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Detail View */
@@ -3173,9 +3239,10 @@ body.mini-player-active .content-area {
     .msg { font-size: 13px; }
     .msg-row { max-width: 65%; }
 
-    /* Persona cards */
-    .persona-card { padding: var(--space-xl); }
-    .persona-card-name { font-size: 22px; }
+    /* Character cards */
+    .char-card-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); }
+    .char-card-name { font-size: 22px; }
+    .char-card-placeholder span { font-size: 72px; }
     .persona-detail-name { font-size: 32px; }
     .persona-detail-avatar { width: 120px; height: 120px; }
     .persona-detail-avatar span { font-size: 44px; }
