@@ -7,7 +7,7 @@
     /* Midnight Base */
     --bg-deep: #0f1a14;
     --bg-main: #141f18;
-    --bg-card: #1a2520;
+    --bg-card: #192e1a;
     --bg-elevated: #223530;
     --bg-surface: #2a3f38;
 
@@ -28,8 +28,8 @@
     --text-faint: #3d5e4a;
 
     /* Urban Accents — Concrete & Sage */
-    --cream: #1a2520;
-    --cream-dark: #1a2520;
+    --cream: #192e1a;
+    --cream-dark: #192e1a;
     --parchment: #223530;
     --honey: #d2c8b2;
     --honey-light: #b4ad98;
@@ -368,7 +368,9 @@ body::after {
 
 .alignment-widget-header span {
     font-family: var(--font-mono);
-    font-size: 14px;
+    font-weight: 300;
+    font-size: 11px;
+    letter-spacing: 0.3px;
     color: var(--text-muted);
 }
 
