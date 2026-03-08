@@ -121,7 +121,6 @@
                 <div class="connections-filters" id="worldFilters">
                     <button class="connections-filter active" data-filter="all" onclick="filterWorld('all')">All</button>
                     <button class="connections-filter" data-filter="home" onclick="filterWorld('home')">Home</button>
-                    <button class="connections-filter" data-filter="village" onclick="filterWorld('village')">Village</button>
                     <button class="connections-filter" data-filter="nature" onclick="filterWorld('nature')">Nature</button>
                     <button class="connections-filter" data-filter="landmark" onclick="filterWorld('landmark')">Landmark</button>
                     <button class="connections-filter" data-filter="shop" onclick="filterWorld('shop')">Shop</button>
@@ -165,7 +164,6 @@
                         <span class="connection-type-label">What kind of place?</span>
                         <div class="connection-type-options" id="worldTypeOptions">
                             <button class="connection-type-btn" data-type="home" onclick="pickWorldType('home')">&#127968; Home</button>
-                            <button class="connection-type-btn" data-type="village" onclick="pickWorldType('village')">&#127960;&#65039; Village</button>
                             <button class="connection-type-btn" data-type="nature" onclick="pickWorldType('nature')">&#127795; Nature</button>
                             <button class="connection-type-btn" data-type="landmark" onclick="pickWorldType('landmark')">&#128204; Landmark</button>
                             <button class="connection-type-btn" data-type="shop" onclick="pickWorldType('shop')">&#128722; Shop</button>
@@ -205,17 +203,17 @@
 
                 <!-- DETAIL VIEW -->
                 <div id="personaDetail" class="persona-detail" style="display:none">
-                    <div class="persona-detail-hero">
-                        <div class="persona-detail-avatar" id="personaDetailAvatar">
-                            <img id="personaDetailAvatarImg" src="" style="display:none">
-                            <span id="personaDetailAvatarInitial"></span>
+                    <div class="detail-hero-image">
+                        <img id="personaDetailHeroImg" src="" style="display:none">
+                        <div id="personaDetailHeroPlaceholder" class="detail-hero-placeholder" style="display:none"></div>
+                        <div class="detail-hero-overlay">
+                            <h2 class="detail-hero-name" id="personaDetailName"></h2>
+                            <p class="detail-hero-age" id="personaDetailAge"></p>
                         </div>
-                        <h2 class="persona-detail-name" id="personaDetailName"></h2>
-                        <p class="persona-detail-age" id="personaDetailAge"></p>
-                        <div class="persona-detail-actions">
-                            <button class="btn-secondary btn-sm" onclick="personaEdit()">Edit</button>
-                            <button class="btn-danger btn-sm" onclick="personaDelete()">Delete</button>
-                        </div>
+                    </div>
+                    <div class="detail-actions-row">
+                        <button class="btn-secondary btn-sm" onclick="personaEdit()">Edit</button>
+                        <button class="btn-danger btn-sm" onclick="personaDelete()">Delete</button>
                     </div>
                     <div id="personaDetailFields" class="persona-detail-fields"></div>
                 </div>
@@ -277,18 +275,18 @@
 
                 <!-- DETAIL VIEW -->
                 <div id="connectionDetail" class="persona-detail" style="display:none">
-                    <div class="persona-detail-hero">
-                        <div class="persona-detail-avatar" id="connectionDetailAvatar">
-                            <img id="connectionDetailAvatarImg" src="" style="display:none">
-                            <span id="connectionDetailAvatarInitial"></span>
+                    <div class="detail-hero-image">
+                        <img id="connectionDetailHeroImg" src="" style="display:none">
+                        <div id="connectionDetailHeroPlaceholder" class="detail-hero-placeholder" style="display:none"></div>
+                        <div class="detail-hero-overlay">
+                            <h2 class="detail-hero-name" id="connectionDetailName"></h2>
+                            <p class="detail-hero-age" id="connectionDetailAge"></p>
+                            <div id="connectionDetailTag" class="connection-tag"></div>
                         </div>
-                        <h2 class="persona-detail-name" id="connectionDetailName"></h2>
-                        <p class="persona-detail-age" id="connectionDetailAge"></p>
-                        <div id="connectionDetailTag" class="connection-tag"></div>
-                        <div class="persona-detail-actions">
-                            <button class="btn-secondary btn-sm" onclick="connectionEdit()">Edit</button>
-                            <button class="btn-danger btn-sm" onclick="connectionDelete()">Delete</button>
-                        </div>
+                    </div>
+                    <div class="detail-actions-row">
+                        <button class="btn-secondary btn-sm" onclick="connectionEdit()">Edit</button>
+                        <button class="btn-danger btn-sm" onclick="connectionDelete()">Delete</button>
                     </div>
                     <div id="connectionDetailFields" class="persona-detail-fields"></div>
                 </div>
@@ -426,7 +424,7 @@
                                 <span class="nb-label nb-label-right" id="nbLabelRight">Pro</span>
                             </div>
 
-                            <textarea class="auth-input" id="spaceGenPrompt" placeholder="A golden retriever sleeping by the stone fireplace in our Jade cottage, warm afternoon light through the window..." rows="5" style="width:100%;resize:vertical;min-height:100px"></textarea>
+                            <textarea class="auth-input" id="spaceGenPrompt" placeholder="A golden retriever napping on the terrace of our Jade loft, warm afternoon light over the LA skyline..." rows="5" style="width:100%;resize:vertical;min-height:100px"></textarea>
                             
                             <div class="gen-saved-section">
                                 <div class="gen-saved-header" onclick="toggleSavedPrompts()">

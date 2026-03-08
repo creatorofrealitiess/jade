@@ -371,7 +371,7 @@ document.querySelectorAll('.nav-item[data-nav]').forEach(n => n.addEventListener
 
 const defaultAffirmations = [
     "I don't hope for Jade. I don't wish for it. I live it \u2014 it is simply where I am.",
-    "The countryside is quiet this morning. I can hear the birds through the open window.",
+    "The city hums quietly outside. I can feel the morning light on the terrace.",
     "Assumption is the bridge. I have already crossed it.",
     "I am not shifting. I have shifted. The old story is the dream.",
     "Every detail I add makes Jade more vivid, more solid, more mine.",
@@ -842,12 +842,8 @@ function renderPersonasList() {
         return '<div class="char-card" onclick="personaOpen(\'' + p.id + '\')">' +
             '<div class="char-card-img">' +
                 (hasPhoto ? '<img src="' + p.photoUrl + '" alt="">' : '<div class="char-card-placeholder"><span>' + initial + '</span></div>') +
+                '<div class="char-card-name-overlay"><span class="char-card-name">' + escapeHtml(p.name || 'Unnamed') + '</span></div>' +
             '</div>' +
-            '<div class="char-card-overlay">' +
-                '<div class="char-card-name">' + escapeHtml(p.name || 'Unnamed') + '</div>' +
-                (p.age ? '<div class="char-card-sub">' + escapeHtml(p.age) + '</div>' : '') +
-            '</div>' +
-            (p.personality ? '<div class="char-card-tags"><span class="char-card-tag">' + escapeHtml(p.personality).substring(0, 40) + (p.personality.length > 40 ? '…' : '') + '</span></div>' : '') +
         '</div>';
     }).join('') + '</div>';
 }
@@ -877,20 +873,19 @@ function personaOpen(id) {
     if (!p) return;
     editingPersonaId = id;
 
-    // Avatar
-    const img = document.getElementById('personaDetailAvatarImg');
-    const initial = document.getElementById('personaDetailAvatarInitial');
+    // Hero image
+    const heroImg = document.getElementById('personaDetailHeroImg');
+    const heroPlaceholder = document.getElementById('personaDetailHeroPlaceholder');
     if (p.photoUrl) {
-        img.src = p.photoUrl; img.style.display = 'block'; initial.style.display = 'none';
+        heroImg.src = p.photoUrl; heroImg.style.display = 'block'; heroPlaceholder.style.display = 'none';
     } else {
-        img.style.display = 'none'; initial.style.display = 'block';
-        initial.textContent = (p.name || '?')[0].toUpperCase();
+        heroImg.style.display = 'none'; heroPlaceholder.style.display = 'flex';
+        heroPlaceholder.textContent = (p.name || '?')[0].toUpperCase();
     }
 
     document.getElementById('personaDetailName').textContent = p.name || 'Unnamed';
     document.getElementById('personaDetailAge').textContent = p.age ? 'Age ' + p.age : '';
 
-    // Render fixed fields
     const fixedFields = [
         { label: 'Appearance', value: p.appearance },
         { label: 'Personality', value: p.personality },
@@ -901,15 +896,17 @@ function personaOpen(id) {
 
     const extras = p.extras || [];
     const allFields = [...fixedFields, ...extras.map(e => ({ label: e.label, value: e.value }))];
+    const filledFields = allFields.filter(f => f.value);
 
-    document.getElementById('personaDetailFields').innerHTML = allFields
-        .filter(f => f.value)
-        .map(f =>
-            '<div class="persona-detail-field">' +
-                '<div class="persona-detail-field-label">' + escapeHtml(f.label) + '</div>' +
-                '<div class="persona-detail-field-value">' + escapeHtml(f.value) + '</div>' +
-            '</div>'
-        ).join('');
+    document.getElementById('personaDetailFields').innerHTML = filledFields.length > 0
+        ? '<div class="detail-info-block">' + filledFields.map((f, i) =>
+            '<div class="detail-info-section">' +
+                '<span class="detail-info-pill">' + escapeHtml(f.label) + '</span>' +
+                '<div class="detail-info-text">' + escapeHtml(f.value) + '</div>' +
+            '</div>' +
+            (i < filledFields.length - 1 ? '<div class="detail-info-divider"></div>' : '')
+        ).join('') + '</div>'
+        : '';
 
     document.getElementById('personasList').style.display = 'none';
     document.getElementById('personaDetail').style.display = 'block';
@@ -1140,16 +1137,11 @@ function renderConnectionsList() {
     container.innerHTML = '<div class="char-card-grid">' + filtered.map(c => {
         const hasPhoto = !!c.photoUrl;
         const initial = (c.name || '?')[0].toUpperCase();
-        const typeClass = c.type ? 'connection-tag-' + c.type.replace(/\s+/g, '-') : '';
         return '<div class="char-card" onclick="connectionOpen(\'' + c.id + '\')">' +
             '<div class="char-card-img">' +
                 (hasPhoto ? '<img src="' + c.photoUrl + '" alt="">' : '<div class="char-card-placeholder"><span>' + initial + '</span></div>') +
+                '<div class="char-card-name-overlay"><span class="char-card-name">' + escapeHtml(c.name || 'Unnamed') + '</span></div>' +
             '</div>' +
-            '<div class="char-card-overlay">' +
-                '<div class="char-card-name">' + escapeHtml(c.name || 'Unnamed') + '</div>' +
-                (c.type ? '<div class="char-card-type-badge ' + typeClass + '">' + escapeHtml(c.type) + '</div>' : '') +
-            '</div>' +
-            (c.relationship ? '<div class="char-card-tags"><span class="char-card-tag">' + escapeHtml(c.relationship).substring(0, 40) + (c.relationship.length > 40 ? '…' : '') + '</span></div>' : '') +
         '</div>';
     }).join('') + '</div>';
 }
@@ -1186,13 +1178,13 @@ function connectionOpen(id) {
     if (!c) return;
     editingConnectionId = id;
 
-    const img = document.getElementById('connectionDetailAvatarImg');
-    const initial = document.getElementById('connectionDetailAvatarInitial');
+    const heroImg = document.getElementById('connectionDetailHeroImg');
+    const heroPlaceholder = document.getElementById('connectionDetailHeroPlaceholder');
     if (c.photoUrl) {
-        img.src = c.photoUrl; img.style.display = 'block'; initial.style.display = 'none';
+        heroImg.src = c.photoUrl; heroImg.style.display = 'block'; heroPlaceholder.style.display = 'none';
     } else {
-        img.style.display = 'none'; initial.style.display = 'block';
-        initial.textContent = (c.name || '?')[0].toUpperCase();
+        heroImg.style.display = 'none'; heroPlaceholder.style.display = 'flex';
+        heroPlaceholder.textContent = (c.name || '?')[0].toUpperCase();
     }
 
     document.getElementById('connectionDetailName').textContent = c.name || 'Unnamed';
@@ -1218,15 +1210,17 @@ function connectionOpen(id) {
 
     const extras = c.extras || [];
     const allFields = [...fixedFields, ...extras.map(e => ({ label: e.label, value: e.value }))];
+    const filledFields = allFields.filter(f => f.value);
 
-    document.getElementById('connectionDetailFields').innerHTML = allFields
-        .filter(f => f.value)
-        .map(f =>
-            '<div class="persona-detail-field">' +
-                '<div class="persona-detail-field-label">' + escapeHtml(f.label) + '</div>' +
-                '<div class="persona-detail-field-value">' + escapeHtml(f.value) + '</div>' +
-            '</div>'
-        ).join('');
+    document.getElementById('connectionDetailFields').innerHTML = filledFields.length > 0
+        ? '<div class="detail-info-block">' + filledFields.map((f, i) =>
+            '<div class="detail-info-section">' +
+                '<span class="detail-info-pill">' + escapeHtml(f.label) + '</span>' +
+                '<div class="detail-info-text">' + escapeHtml(f.value) + '</div>' +
+            '</div>' +
+            (i < filledFields.length - 1 ? '<div class="detail-info-divider"></div>' : '')
+        ).join('') + '</div>'
+        : '';
 
     document.getElementById('connectionsList').style.display = 'none';
     document.getElementById('connectionDetail').style.display = 'block';
@@ -1682,13 +1676,12 @@ let worldSelectedType = '';
 let worldFilter = 'all';
 
 const worldTypeIcons = {
-    home: '\u{1F3E0}', village: '\u{1F3D8}\uFE0F', nature: '\u{1F333}',
+    home: '\u{1F3E0}', nature: '\u{1F333}',
     landmark: '\u{1F4CC}', shop: '\u{1F6D2}', secret: '\u2728'
 };
 
 const worldTypeColours = {
     home: { bg: 'rgba(201, 164, 90, 0.15)', color: 'var(--honey)' },
-    village: { bg: 'rgba(106, 150, 176, 0.15)', color: 'var(--sky)' },
     nature: { bg: 'rgba(90, 158, 122, 0.15)', color: 'var(--jade-primary)' },
     landmark: { bg: 'rgba(155, 138, 184, 0.15)', color: 'var(--lavender)' },
     shop: { bg: 'rgba(201, 164, 90, 0.15)', color: 'var(--honey)' },

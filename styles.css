@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════
    JADE DESIGN SYSTEM — SOFT MIDNIGHT
-   Dark · Cottagecore · Whimsical · Spiritual
+   Dark · Whimsical · Spiritual · Urban
    ═══════════════════════════════════════════ */
 
 :root {
@@ -1054,7 +1054,7 @@ body::after {
 /* ═══════ PERSONAS ═══════ */
 .personas-list { display: flex; flex-direction: column; gap: var(--space-md); }
 
-/* ═══════ CHARACTER CARDS (SillyTavern style) ═══════ */
+/* ═══════ CHARACTER CARDS (Grid) ═══════ */
 .char-card-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -1068,17 +1068,11 @@ body::after {
     cursor: pointer;
     background: var(--bg-card);
     border: var(--border-subtle);
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.2s ease;
 }
 
-.char-card:active {
-    transform: scale(0.97);
-}
-
-.char-card:hover {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-    border-color: rgba(90, 158, 122, 0.25);
-}
+.char-card:active { transform: scale(0.97); }
+.char-card:hover { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35); border-color: rgba(90, 158, 122, 0.25); }
 
 .char-card-img {
     position: relative;
@@ -1109,132 +1103,133 @@ body::after {
     font-size: 56px;
     font-weight: 600;
     color: var(--jade-primary);
-    opacity: 0.6;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    opacity: 0.5;
 }
 
-.char-card-overlay {
+.char-card-name-overlay {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    padding: var(--space-xl) var(--space-md) var(--space-md);
-    background: linear-gradient(to top, rgba(15, 26, 20, 0.92) 0%, rgba(15, 26, 20, 0.7) 50%, transparent 100%);
-    z-index: 1;
+    padding: var(--space-xl) var(--space-md) var(--space-sm);
+    background: linear-gradient(to top, rgba(10, 18, 12, 0.88) 0%, rgba(10, 18, 12, 0.5) 55%, transparent 100%);
 }
 
 .char-card-name {
     font-family: var(--font-display);
-    font-size: 19px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     color: #fff;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
     line-height: 1.2;
-    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
-.char-card-sub {
-    font-family: var(--font-body);
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    margin-top: 2px;
-}
-
-.char-card-type-badge {
-    display: inline-block;
-    font-family: var(--font-body);
-    font-size: 10px;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: var(--radius-xl);
-    margin-top: 4px;
-    text-transform: capitalize;
-    backdrop-filter: blur(4px);
-}
-
-.char-card-type-badge.connection-tag-love-interest {
-    background: rgba(155, 138, 184, 0.3);
-    color: #c4b5de;
-}
-
-.char-card-type-badge.connection-tag-friends {
-    background: rgba(201, 164, 90, 0.3);
-    color: #dbc48a;
-}
-
-.char-card-type-badge.connection-tag-kin {
-    background: rgba(201, 134, 126, 0.3);
-    color: #daa099;
-}
-
-.char-card-type-badge.connection-tag-pets {
-    background: rgba(90, 158, 122, 0.3);
-    color: #8cc8a4;
-}
-
-.char-card-tags {
-    padding: var(--space-sm) var(--space-md);
-    background: var(--bg-card);
-}
-
-.char-card-tag {
-    font-family: var(--font-body);
-    font-size: 11px;
-    color: var(--text-muted);
-    display: block;
-    line-height: 1.3;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* Detail View */
+/* ═══════ DETAIL VIEW (Hero Image + Info Block) ═══════ */
 .persona-detail { animation: fadeIn 0.3s ease; }
 
-.persona-detail-hero {
-    text-align: center;
-    padding: var(--space-lg) 0 var(--space-xl);
+.detail-hero-image {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    max-height: 55vh;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background: var(--bg-surface);
+    margin-bottom: var(--space-md);
 }
 
-.persona-detail-avatar {
-    width: 96px; height: 96px;
-    border-radius: 50%;
-    background: var(--bg-surface);
-    border: 3px solid var(--jade-pale);
-    overflow: hidden;
+.detail-hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.detail-hero-placeholder {
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto var(--space-md);
-}
-
-.persona-detail-avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-.persona-detail-avatar span {
     font-family: var(--font-display);
-    font-size: 36px;
-    color: var(--text-muted);
-    font-weight: 500;
+    font-size: 72px;
+    font-weight: 600;
+    color: var(--jade-primary);
+    opacity: 0.4;
+    background: linear-gradient(135deg, var(--jade-mist), var(--bg-elevated), var(--jade-whisper));
 }
 
-.persona-detail-name {
+.detail-hero-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: var(--space-2xl) var(--space-lg) var(--space-lg);
+    background: linear-gradient(to top, rgba(10, 18, 12, 0.9) 0%, rgba(10, 18, 12, 0.55) 55%, transparent 100%);
+}
+
+.detail-hero-name {
     font-family: var(--font-display);
     font-size: 28px;
-    font-weight: 500;
-    color: var(--text-primary);
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    margin: 0;
+    line-height: 1.2;
 }
 
-.persona-detail-age {
-    font-family: var(--font-handwritten);
-    font-size: 16px;
-    color: var(--text-muted);
-    margin-top: 2px;
+.detail-hero-age {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 4px 0 0;
 }
 
-.persona-detail-actions {
+.detail-actions-row {
     display: flex;
     gap: var(--space-sm);
-    justify-content: center;
-    margin-top: var(--space-md);
+    margin-bottom: var(--space-md);
+}
+
+/* Unified info block */
+.detail-info-block {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: var(--border-subtle);
+    padding: var(--space-lg);
+}
+
+.detail-info-section {
+    padding: var(--space-sm) 0;
+}
+
+.detail-info-pill {
+    display: inline-block;
+    font-family: var(--font-body);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--jade-primary);
+    background: rgba(90, 158, 122, 0.12);
+    padding: 3px 10px;
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--space-sm);
+}
+
+.detail-info-text {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    white-space: pre-wrap;
+}
+
+.detail-info-divider {
+    height: 1px;
+    background: var(--jade-pale);
+    opacity: 0.3;
+    margin: var(--space-md) 0;
 }
 
 .persona-detail-fields {
@@ -1242,30 +1237,6 @@ body::after {
     flex-direction: column;
     gap: var(--space-md);
     padding-bottom: var(--space-xl);
-}
-
-.persona-detail-field {
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    padding: var(--space-lg);
-    border: var(--border-subtle);
-}
-
-.persona-detail-field-label {
-    font-family: var(--font-handwritten);
-    font-size: 14px;
-    color: var(--jade-primary);
-    margin-bottom: var(--space-sm);
-    letter-spacing: 0.5px;
-}
-
-.persona-detail-field-value {
-    font-family: var(--font-display);
-    font-size: 16px;
-    font-style: italic;
-    color: var(--text-secondary);
-    line-height: 1.7;
-    white-space: pre-wrap;
 }
 
 /* Editor */
@@ -3241,11 +3212,10 @@ body.mini-player-active .content-area {
 
     /* Character cards */
     .char-card-grid { grid-template-columns: repeat(3, 1fr); gap: var(--space-lg); }
-    .char-card-name { font-size: 22px; }
+    .char-card-name { font-size: 20px; }
     .char-card-placeholder span { font-size: 72px; }
-    .persona-detail-name { font-size: 32px; }
-    .persona-detail-avatar { width: 120px; height: 120px; }
-    .persona-detail-avatar span { font-size: 44px; }
+    .detail-hero-name { font-size: 34px; }
+    .detail-hero-image { max-height: 60vh; }
 
     /* Connections */
     .connections-filters {
