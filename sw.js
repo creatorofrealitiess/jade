@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jade-v21';
+const CACHE_NAME = 'jade-v22';
 const ASSETS = [
     './',
     './index.html',
