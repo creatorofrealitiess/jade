@@ -7,14 +7,14 @@
     /* Midnight Base */
     --bg-deep: #0f1a14;
     --bg-main: #141f18;
-    --bg-card: #1e3225;
-    --bg-elevated: #253d2d;
-    --bg-surface: #2c4735;
+    --bg-card: #1a2520;
+    --bg-elevated: #223530;
+    --bg-surface: #2a3f38;
 
     /* Jade Crystal Palette (muted for dark) */
     --jade-deep: #c5e0d2;
     --jade-dark: #a8d0b8;
-    --jade-primary: #5a9e7a;
+    --jade-primary: #64be8c;
     --jade-medium: #4a8c6a;
     --jade-light: #3a7558;
     --jade-pale: #2d5a3d;
@@ -23,26 +23,26 @@
 
     /* Text */
     --text-primary: #dde8e0;
-    --text-secondary: #8aaa96;
-    --text-muted: #5e8570;
+    --text-secondary: #8ea898;
+    --text-muted: #688e78;
     --text-faint: #3d5e4a;
 
-    /* Warm Cottage Accents */
-    --cream: #182a1e;
-    --cream-dark: #1e3225;
-    --parchment: #234030;
-    --honey: #c9a45a;
-    --honey-light: #a8863f;
-    --rose: #c9867e;
-    --rose-light: #a06b64;
-    --lavender: #9b8ab8;
-    --lavender-light: #7a6d96;
-    --sky: #6a96b0;
+    /* Urban Accents — Concrete & Sage */
+    --cream: #1a2520;
+    --cream-dark: #1a2520;
+    --parchment: #223530;
+    --honey: #d2c8b2;
+    --honey-light: #b4ad98;
+    --rose: #d28c78;
+    --rose-light: #b07464;
+    --lavender: #8caa94;
+    --lavender-light: #6e8e76;
+    --sky: #64be8c;
 
     /* Typography */
-    --font-display: 'Cormorant Garamond', Georgia, serif;
+    --font-display: 'Libre Caslon Display', Georgia, serif;
     --font-body: 'Hubballi', 'Quicksand', 'Segoe UI', sans-serif;
-    --font-handwritten: 'Caveat', cursive;
+    --font-mono: 'IBM Plex Mono', monospace;
 
     /* Spacing */
     --space-xs: 4px;
@@ -53,15 +53,15 @@
     --space-2xl: 48px;
 
     /* Borders & Shadows */
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 20px;
-    --radius-xl: 28px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
     --shadow-soft: 0 2px 12px rgba(0, 0, 0, 0.2);
     --shadow-medium: 0 4px 20px rgba(0, 0, 0, 0.3);
     --shadow-lifted: 0 8px 32px rgba(0, 0, 0, 0.4);
-    --border-subtle: 1px solid rgba(90, 158, 122, 0.12);
-    --border-medium: 1px solid rgba(90, 158, 122, 0.2);
+    --border-subtle: 1px solid rgba(100, 190, 140, 0.1);
+    --border-medium: 1px solid rgba(100, 190, 140, 0.18);
 
     /* Layout */
     --safe-top: env(safe-area-inset-top, 0px);
@@ -145,8 +145,10 @@ body::after {
 }
 
 .auth-tagline {
-    font-family: var(--font-handwritten);
-    font-size: 18px;
+    font-family: var(--font-mono);
+    font-weight: 300;
+    font-size: 13px;
+    letter-spacing: 0.5px;
     color: var(--text-muted);
     margin-bottom: var(--space-2xl);
 }
@@ -239,11 +241,13 @@ body::after {
 .app-title::after { right: -24px; }
 
 .app-subtitle {
-    font-family: var(--font-handwritten);
-    font-size: 15px;
+    font-family: var(--font-mono);
+    font-weight: 300;
+    font-size: 11px;
     color: var(--text-muted);
     margin-top: 2px;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    text-transform: lowercase;
 }
 
 /* ═══════ CONTENT AREA ═══════ */
@@ -308,7 +312,7 @@ body::after {
 }
 
 .affirmation-banner .source {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 14px;
     opacity: 0.5;
     margin-top: var(--space-sm);
@@ -363,7 +367,7 @@ body::after {
 }
 
 .alignment-widget-header span {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--text-muted);
 }
@@ -409,7 +413,7 @@ body::after {
 }
 
 .alignment-history-title {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--text-muted);
 }
@@ -587,7 +591,7 @@ body::after {
 
 .coming-soon-badge {
     display: inline-block;
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--honey);
     background: rgba(201, 164, 90, 0.1);
@@ -610,7 +614,7 @@ body::after {
 
 .journal-entry-card:hover { box-shadow: var(--shadow-soft); border-color: rgba(90, 158, 122, 0.2); }
 
-.journal-entry-date { font-family: var(--font-handwritten); font-size: 14px; color: var(--text-muted); margin-bottom: var(--space-xs); }
+.journal-entry-date { font-family: var(--font-mono); font-weight: 300; font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-xs); letter-spacing: 0.5px; }
 .journal-entry-title { font-family: var(--font-display); font-size: 19px; font-weight: 500; color: var(--text-primary); margin-bottom: var(--space-xs); }
 
 .journal-entry-preview {
@@ -1040,7 +1044,7 @@ body::after {
 .settings-avatar-hint {
     font-size: 12px;
     color: var(--text-faint);
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
 }
 
 .settings-row {
@@ -1179,9 +1183,11 @@ body::after {
 }
 
 .detail-hero-age {
-    font-family: var(--font-body);
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.6);
+    font-family: var(--font-mono);
+    font-weight: 300;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.55);
     margin: 4px 0 0;
 }
 
@@ -1205,13 +1211,13 @@ body::after {
 
 .detail-info-pill {
     display: inline-block;
-    font-family: var(--font-body);
-    font-size: 11px;
-    font-weight: 600;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 400;
     text-transform: uppercase;
     letter-spacing: 0.8px;
     color: var(--jade-primary);
-    background: rgba(90, 158, 122, 0.12);
+    background: rgba(100, 190, 140, 0.1);
     padding: 3px 10px;
     border-radius: var(--radius-xl);
     margin-bottom: var(--space-sm);
@@ -1311,7 +1317,7 @@ body::after {
 
 .persona-extra-label {
     flex: 1;
-    font-family: var(--font-handwritten) !important;
+    font-family: var(--font-mono) !important;
     font-size: 15px !important;
 }
 
@@ -1362,7 +1368,7 @@ body::after {
 }
 
 .connection-type-label {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--text-muted);
     display: block;
@@ -1408,23 +1414,23 @@ body::after {
 }
 
 .connection-tag-love-interest {
-    background: rgba(155, 138, 184, 0.15);
-    color: var(--lavender);
+    background: rgba(100, 190, 140, 0.15);
+    color: var(--jade-primary);
 }
 
 .connection-tag-friends {
-    background: rgba(201, 164, 90, 0.15);
-    color: var(--honey);
-}
-
-.connection-tag-kin {
-    background: rgba(201, 134, 126, 0.15);
+    background: rgba(210, 140, 120, 0.15);
     color: var(--rose);
 }
 
+.connection-tag-kin {
+    background: rgba(140, 170, 148, 0.15);
+    color: var(--lavender);
+}
+
 .connection-tag-pets {
-    background: rgba(90, 158, 122, 0.15);
-    color: var(--jade-primary);
+    background: rgba(210, 200, 178, 0.12);
+    color: var(--honey);
 }
 
 /* ═══════ WORLD / LOCATIONS ═══════ */
@@ -1558,7 +1564,7 @@ body::after {
 }
 
 .space-album-meta {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 13px;
     color: var(--text-faint);
     margin-top: 1px;
@@ -1632,7 +1638,7 @@ body::after {
 .space-album-header-info { flex: 1; }
 
 .space-album-count {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--text-muted);
 }
@@ -1783,7 +1789,7 @@ body::after {
 }
 
 .space-photo-detail-meta {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 13px;
     color: var(--text-faint);
     margin-top: var(--space-xs);
@@ -1834,7 +1840,7 @@ body::after {
 }
 
 .space-photo-nav-counter {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 13px;
     color: var(--text-faint);
     min-width: 45px;
@@ -1875,7 +1881,7 @@ body::after {
 }
 
 .space-gen-loading p {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 15px;
     color: var(--text-muted);
 }
@@ -1915,7 +1921,7 @@ body::after {
     left: var(--space-sm);
     background: rgba(0, 0, 0, 0.6);
     color: var(--jade-light);
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 12px;
     padding: 3px 10px;
     border-radius: var(--radius-xl);
@@ -1945,7 +1951,7 @@ body::after {
 
 /* ═══════ SENSORY ANCHORS ═══════ */
 .anchors-intro {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 15px;
     color: var(--text-muted);
     margin-bottom: var(--space-lg);
@@ -2022,8 +2028,10 @@ body::after {
 }
 
 .anchor-card-meta {
-    font-family: var(--font-handwritten);
-    font-size: 13px;
+    font-family: var(--font-mono);
+    font-weight: 300;
+    font-size: 11px;
+    letter-spacing: 0.3px;
     color: var(--text-faint);
     margin-top: 2px;
 }
@@ -2273,7 +2281,7 @@ body::after {
 
 .mini-player-name {
     flex: 1;
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--text-secondary);
     white-space: nowrap;
@@ -2403,7 +2411,7 @@ body.mini-player-active .content-area {
     font-size: 11px;
     color: var(--text-faint);
     margin-top: var(--space-sm);
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-weight: 500;
 }
 
@@ -2449,7 +2457,7 @@ body.mini-player-active .content-area {
 .scene-detail-meta {
     font-size: 12px;
     color: var(--text-faint);
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-weight: 500;
     margin-bottom: var(--space-lg);
     padding-bottom: var(--space-md);
@@ -2564,7 +2572,7 @@ body.mini-player-active .content-area {
 
 .timeline-year-marker {
     position: relative;
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 18px;
     font-weight: 600;
     color: var(--jade-primary);
@@ -2612,7 +2620,7 @@ body.mini-player-active .content-area {
 }
 
 .timeline-card-date {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--text-muted);
     margin-bottom: var(--space-xs);
@@ -2697,7 +2705,7 @@ body.mini-player-active .content-area {
 }
 
 .gen-ref-label {
-    font-family: var(--font-handwritten);
+    font-family: var(--font-mono);
     font-size: 14px;
     color: var(--text-muted);
     display: block;
