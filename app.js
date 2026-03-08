@@ -1676,16 +1676,17 @@ let worldSelectedType = '';
 let worldFilter = 'all';
 
 const worldTypeIcons = {
-    home: '\u{1F3E0}', nature: '\u{1F333}',
-    landmark: '\u{1F4CC}', shop: '\u{1F6D2}', secret: '\u2728'
+    home: '\u{1F3E0}', city: '\u{1F306}', work: '\u{1F4BC}',
+    'daily spots': '\u{2615}', shop: '\u{1F6D2}', special: '\u2728'
 };
 
 const worldTypeColours = {
     home: { bg: 'rgba(201, 164, 90, 0.15)', color: 'var(--honey)' },
-    nature: { bg: 'rgba(90, 158, 122, 0.15)', color: 'var(--jade-primary)' },
-    landmark: { bg: 'rgba(155, 138, 184, 0.15)', color: 'var(--lavender)' },
+    city: { bg: 'rgba(106, 150, 176, 0.15)', color: 'var(--sky)' },
+    work: { bg: 'rgba(155, 138, 184, 0.15)', color: 'var(--lavender)' },
+    'daily spots': { bg: 'rgba(90, 158, 122, 0.15)', color: 'var(--jade-primary)' },
     shop: { bg: 'rgba(201, 164, 90, 0.15)', color: 'var(--honey)' },
-    secret: { bg: 'rgba(201, 134, 126, 0.15)', color: 'var(--rose)' }
+    special: { bg: 'rgba(201, 134, 126, 0.15)', color: 'var(--rose)' }
 };
 
 function initWorld() {
@@ -1709,17 +1710,16 @@ function renderWorldList() {
         return;
     }
 
-    container.innerHTML = filtered.map(w => {
+    container.innerHTML = '<div class="char-card-grid">' + filtered.map(w => {
         const icon = worldTypeIcons[w.type] || '\u{1F33F}';
-        const avatarHtml = w.photoUrl ? '<img src="' + w.photoUrl + '" alt="">' : '<span>' + icon + '</span>';
-        return '<div class="persona-card world-card" onclick="worldOpen(\'' + w.id + '\')">' +
-            '<div class="persona-card-avatar world-card-avatar">' + avatarHtml + '</div>' +
-            '<div class="persona-card-info">' +
-                '<div class="persona-card-name">' + escapeHtml(w.name || 'Unnamed') + '</div>' +
-                '<div class="persona-card-age">' + escapeHtml(w.type || '') + '</div>' +
-                (w.description ? '<div class="persona-card-preview">' + escapeHtml(w.description) + '</div>' : '') +
-            '</div><div class="persona-card-arrow">&rsaquo;</div></div>';
-    }).join('');
+        const hasPhoto = !!w.photoUrl;
+        return '<div class="char-card" onclick="worldOpen(\'' + w.id + '\')">' +
+            '<div class="char-card-img">' +
+                (hasPhoto ? '<img src="' + w.photoUrl + '" alt="">' : '<div class="char-card-placeholder"><span>' + icon + '</span></div>') +
+                '<div class="char-card-name-overlay"><span class="char-card-name">' + escapeHtml(w.name || 'Unnamed') + '</span></div>' +
+            '</div>' +
+        '</div>';
+    }).join('') + '</div>';
 }
 
 function filterWorld(type) {
@@ -1749,10 +1749,10 @@ function worldOpen(id) {
     if (!w) return;
     editingWorldId = id;
 
-    const img = document.getElementById('worldDetailPhotoImg');
-    const placeholder = document.getElementById('worldDetailPhotoPlaceholder');
-    if (w.photoUrl) { img.src = w.photoUrl; img.style.display = 'block'; placeholder.style.display = 'none'; }
-    else { img.style.display = 'none'; placeholder.style.display = 'flex'; document.getElementById('worldDetailPhotoIcon').textContent = worldTypeIcons[w.type] || '\u{1F33F}'; }
+    const heroImg = document.getElementById('worldDetailHeroImg');
+    const heroPlaceholder = document.getElementById('worldDetailHeroPlaceholder');
+    if (w.photoUrl) { heroImg.src = w.photoUrl; heroImg.style.display = 'block'; heroPlaceholder.style.display = 'none'; }
+    else { heroImg.style.display = 'none'; heroPlaceholder.style.display = 'flex'; document.getElementById('worldDetailHeroIcon').textContent = worldTypeIcons[w.type] || '\u{1F33F}'; }
 
     document.getElementById('worldDetailName').textContent = w.name || 'Unnamed';
     const tagEl = document.getElementById('worldDetailTag');
@@ -1769,9 +1769,16 @@ function worldOpen(id) {
     ];
     const extras = w.extras || [];
     const allFields = [...fixedFields, ...extras.map(e => ({ label: e.label, value: e.value }))];
-    document.getElementById('worldDetailFields').innerHTML = allFields.filter(f => f.value).map(f =>
-        '<div class="persona-detail-field"><div class="persona-detail-field-label">' + escapeHtml(f.label) + '</div><div class="persona-detail-field-value">' + escapeHtml(f.value) + '</div></div>'
-    ).join('');
+    const filledFields = allFields.filter(f => f.value);
+    document.getElementById('worldDetailFields').innerHTML = filledFields.length > 0
+        ? '<div class="detail-info-block">' + filledFields.map((f, i) =>
+            '<div class="detail-info-section">' +
+                '<span class="detail-info-pill">' + escapeHtml(f.label) + '</span>' +
+                '<div class="detail-info-text">' + escapeHtml(f.value) + '</div>' +
+            '</div>' +
+            (i < filledFields.length - 1 ? '<div class="detail-info-divider"></div>' : '')
+        ).join('') + '</div>'
+        : '';
 
     document.getElementById('worldList').style.display = 'none';
     document.getElementById('worldDetail').style.display = 'block';
@@ -2788,6 +2795,29 @@ document.addEventListener('paste', async (e) => {
         alert('Upload failed: ' + err.message);
     }
 });
+
+// ── Save Image to Device ──
+async function spaceSaveToDevice() {
+    const photo = spacePhotos.find(p => p.id === currentPhotoId);
+    if (!photo || !photo.url) return;
+    try {
+        const response = await fetch(photo.url);
+        const blob = await response.blob();
+        const ext = blob.type.includes('png') ? '.png' : blob.type.includes('webp') ? '.webp' : '.jpg';
+        const name = (photo.caption || 'jade-photo').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 40) + ext;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(a.href);
+    } catch (err) {
+        console.error('Save failed:', err);
+        // Fallback: open in new tab
+        window.open(photo.url, '_blank');
+    }
+}
 
 // ── Caption Edit ──
 function spaceEditCaption() {

@@ -121,28 +121,29 @@
                 <div class="connections-filters" id="worldFilters">
                     <button class="connections-filter active" data-filter="all" onclick="filterWorld('all')">All</button>
                     <button class="connections-filter" data-filter="home" onclick="filterWorld('home')">Home</button>
-                    <button class="connections-filter" data-filter="nature" onclick="filterWorld('nature')">Nature</button>
-                    <button class="connections-filter" data-filter="landmark" onclick="filterWorld('landmark')">Landmark</button>
+                    <button class="connections-filter" data-filter="city" onclick="filterWorld('city')">City</button>
+                    <button class="connections-filter" data-filter="work" onclick="filterWorld('work')">Work</button>
+                    <button class="connections-filter" data-filter="daily spots" onclick="filterWorld('daily spots')">Daily Spots</button>
                     <button class="connections-filter" data-filter="shop" onclick="filterWorld('shop')">Shop</button>
-                    <button class="connections-filter" data-filter="secret" onclick="filterWorld('secret')">Secret</button>
+                    <button class="connections-filter" data-filter="special" onclick="filterWorld('special')">Special</button>
                 </div>
 
                 <div id="worldList" class="personas-list"></div>
 
                 <div id="worldDetail" class="persona-detail" style="display:none">
-                    <div class="world-detail-hero">
-                        <div class="world-detail-photo" id="worldDetailPhoto">
-                            <img id="worldDetailPhotoImg" src="" style="display:none">
-                            <div class="world-detail-photo-placeholder" id="worldDetailPhotoPlaceholder">
-                                <span id="worldDetailPhotoIcon">&#127807;</span>
-                            </div>
+                    <div class="detail-hero-image">
+                        <img id="worldDetailHeroImg" src="" style="display:none">
+                        <div id="worldDetailHeroPlaceholder" class="detail-hero-placeholder" style="display:none">
+                            <span id="worldDetailHeroIcon">&#127807;</span>
                         </div>
-                        <h2 class="persona-detail-name" id="worldDetailName"></h2>
-                        <div id="worldDetailTag" class="connection-tag" style="display:none"></div>
-                        <div class="persona-detail-actions">
-                            <button class="btn-secondary btn-sm" onclick="worldEdit()">Edit</button>
-                            <button class="btn-danger btn-sm" onclick="worldDelete()">Delete</button>
+                        <div class="detail-hero-overlay">
+                            <h2 class="detail-hero-name" id="worldDetailName"></h2>
+                            <div id="worldDetailTag" class="connection-tag" style="display:none"></div>
                         </div>
+                    </div>
+                    <div class="detail-actions-row">
+                        <button class="btn-secondary btn-sm" onclick="worldEdit()">Edit</button>
+                        <button class="btn-danger btn-sm" onclick="worldDelete()">Delete</button>
                     </div>
                     <div id="worldDetailFields" class="persona-detail-fields"></div>
                 </div>
@@ -164,10 +165,11 @@
                         <span class="connection-type-label">What kind of place?</span>
                         <div class="connection-type-options" id="worldTypeOptions">
                             <button class="connection-type-btn" data-type="home" onclick="pickWorldType('home')">&#127968; Home</button>
-                            <button class="connection-type-btn" data-type="nature" onclick="pickWorldType('nature')">&#127795; Nature</button>
-                            <button class="connection-type-btn" data-type="landmark" onclick="pickWorldType('landmark')">&#128204; Landmark</button>
+                            <button class="connection-type-btn" data-type="city" onclick="pickWorldType('city')">&#127750; City</button>
+                            <button class="connection-type-btn" data-type="work" onclick="pickWorldType('work')">&#128188; Work</button>
+                            <button class="connection-type-btn" data-type="daily spots" onclick="pickWorldType('daily spots')">&#9749; Daily Spots</button>
                             <button class="connection-type-btn" data-type="shop" onclick="pickWorldType('shop')">&#128722; Shop</button>
-                            <button class="connection-type-btn" data-type="secret" onclick="pickWorldType('secret')">&#10024; Secret</button>
+                            <button class="connection-type-btn" data-type="special" onclick="pickWorldType('special')">&#10024; Special</button>
                         </div>
                     </div>
                     <textarea class="auth-input persona-field-input" id="worldEdDescription" placeholder="Describe this place &mdash; what does it look like? What&rsquo;s the feel?" rows="4"></textarea>
@@ -383,6 +385,7 @@
                         <div class="space-photo-detail-caption" id="spacePhotoDetailCaption"></div>
                         <div class="space-photo-detail-meta" id="spacePhotoDetailMeta"></div>
                         <div class="space-photo-detail-actions">
+                            <button class="btn-secondary btn-sm" onclick="spaceSaveToDevice()">Save Image</button>
                             <button class="btn-secondary btn-sm" onclick="spaceEditCaption()">Edit Caption</button>
                             <button class="btn-secondary btn-sm" onclick="spaceMovePhoto()">Move to Album</button>
                             <button class="btn-danger btn-sm" onclick="spaceDeletePhoto()">Delete</button>

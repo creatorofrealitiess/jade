@@ -1428,37 +1428,6 @@ body::after {
 }
 
 /* ═══════ WORLD / LOCATIONS ═══════ */
-.world-card-avatar {
-    border-radius: var(--radius-md) !important;
-    background: var(--bg-surface);
-}
-
-.world-card-avatar span {
-    font-size: 24px !important;
-    font-family: initial !important;
-}
-
-.world-detail-hero {
-    text-align: center;
-    padding: var(--space-lg) 0 var(--space-xl);
-}
-
-.world-detail-photo {
-    width: 100%; max-width: 320px; height: 180px;
-    border-radius: var(--radius-lg); background: var(--bg-surface);
-    border: var(--border-subtle); overflow: hidden;
-    margin: 0 auto var(--space-lg); position: relative;
-}
-
-.world-detail-photo img { width: 100%; height: 100%; object-fit: cover; }
-
-.world-detail-photo-placeholder {
-    width: 100%; height: 100%; display: flex;
-    align-items: center; justify-content: center;
-    background: radial-gradient(ellipse at 50% 80%, rgba(90, 158, 122, 0.08) 0%, transparent 60%), var(--bg-surface);
-}
-
-.world-detail-photo-placeholder span { font-size: 48px; opacity: 0.6; }
 
 .world-editor-photo-row {
     display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-lg);
@@ -3220,12 +3189,6 @@ body.mini-player-active .content-area {
     /* Connections */
     .connections-filters {
         gap: var(--space-sm);
-    }
-
-    /* World detail */
-    .world-detail-photo {
-        max-width: 480px;
-        height: 260px;
     }
 
     /* Space albums: 3 columns */
