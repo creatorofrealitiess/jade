@@ -416,7 +416,9 @@ body::after {
 
 .alignment-history-title {
     font-family: var(--font-mono);
-    font-size: 14px;
+    font-weight: 300;
+    font-size: 11px;
+    letter-spacing: 0.3px;
     color: var(--text-muted);
 }
 
